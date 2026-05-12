@@ -1,0 +1,987 @@
+<!doctype html>
+<html lang="id">
+  <head>    
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SiPadu — Dashboard Statistik</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <style>
+      *,  
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      :root {
+        --bg: #0a0c10;
+        --surface: #111318;
+        --surface2: #181c24;
+        --border: rgba(255, 255, 255, 0.07);
+        --border2: rgba(255, 255, 255, 0.13);
+        --text: #e8eaf0;
+        --muted: #6b7280;
+        --accent: #3b82f6;
+        --accent2: #60a5fa;
+        --red: #ef4444;
+        --yellow: #f59e0b;
+        --green: #22c55e;
+        --gray-c: #6b7280;
+        --radius: 14px;
+        --font: "Sora", sans-serif;
+        --mono: "JetBrains Mono", monospace;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        font-family: var(--font);
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+        pointer-events: none;
+        z-index: 0;
+      }
+      .orb {
+        position: fixed;
+        border-radius: 50%;
+        filter: blur(120px);
+        pointer-events: none;
+        z-index: 0;
+      }
+      .orb-1 {
+        width: 500px;
+        height: 500px;
+        background: radial-gradient(
+          circle,
+          rgba(59, 130, 246, 0.1),
+          transparent 70%
+        );
+        top: -100px;
+        left: -100px;
+      }
+      .orb-2 {
+        width: 400px;
+        height: 400px;
+        background: radial-gradient(
+          circle,
+          rgba(139, 92, 246, 0.07),
+          transparent 70%
+        );
+        bottom: -80px;
+        right: -80px;
+      }
+
+      /* NAV */
+      nav {
+        position: relative;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 18px 32px;
+        border-bottom: 1px solid var(--border);
+        background: rgba(10, 12, 16, 0.8);
+        backdrop-filter: blur(12px);
+      }
+      .nav-brand {
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        color: var(--text);
+      }
+      .nav-brand span {
+        color: var(--accent2);
+      }
+      .nav-links {
+        display: flex;
+        gap: 4px;
+      }
+      .nav-link {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--muted);
+        padding: 7px 14px;
+        border-radius: 8px;
+        text-decoration: none;
+        transition: all 0.2s;
+      }
+      .nav-link:hover,
+      .nav-link.active {
+        background: var(--surface2);
+        color: var(--text);
+      }
+
+      /* LAYOUT */
+      .wrap {
+        position: relative;
+        z-index: 1;
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 36px 24px 80px;
+      }
+
+      /* SECTION TITLE */
+      .section-title {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 16px;
+      }
+
+      /* KPI CARDS */
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-bottom: 32px;
+      }
+      @media (max-width: 700px) {
+        .kpi-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      .kpi {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 20px 22px;
+      }
+      .kpi-label {
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 10px;
+      }
+      .kpi-val {
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        line-height: 1;
+      }
+      .kpi-sub {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 6px;
+        font-family: var(--mono);
+      }
+      .kpi.red .kpi-val {
+        color: var(--red);
+      }
+      .kpi.yellow .kpi-val {
+        color: var(--yellow);
+      }
+      .kpi.green .kpi-val {
+        color: var(--green);
+      }
+      .kpi.blue .kpi-val {
+        color: var(--accent2);
+      }
+
+      /* CHARTS ROW */
+      .charts-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+      @media (max-width: 700px) {
+        .charts-row {
+          grid-template-columns: 1fr;
+        }
+      }
+      .chart-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 22px 24px;
+      }
+      .chart-card.wide {
+        grid-column: 1/-1;
+      }
+      .chart-wrap {
+        position: relative;
+        height: 200px;
+      }
+      .chart-wrap.tall {
+        height: 260px;
+      }
+
+      /* URGENSI BARS */
+      .urg-bars {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 4px;
+      }
+      .urg-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .urg-icon {
+        font-size: 16px;
+        width: 20px;
+        text-align: center;
+        flex-shrink: 0;
+      }
+      .urg-name {
+        font-size: 12px;
+        color: var(--muted);
+        width: 90px;
+        flex-shrink: 0;
+      }
+      .urg-bar-bg {
+        flex: 1;
+        height: 8px;
+        background: var(--surface2);
+        border-radius: 100px;
+        overflow: hidden;
+      }
+      .urg-bar-fill {
+        height: 100%;
+        border-radius: 100px;
+        transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+        width: 0;
+      }
+      .urg-bar-fill.red {
+        background: var(--red);
+      }
+      .urg-bar-fill.yellow {
+        background: var(--yellow);
+      }
+      .urg-bar-fill.green {
+        background: var(--green);
+      }
+      .urg-bar-fill.gray {
+        background: var(--gray-c);
+      }
+      .urg-count {
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--muted);
+        width: 30px;
+        text-align: right;
+      }
+
+      /* TABLE */
+      .table-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        overflow: hidden;
+        margin-bottom: 20px;
+      }
+      .table-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 18px 22px;
+        border-bottom: 1px solid var(--border);
+      }
+      .table-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .search-input {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text);
+        font-family: var(--font);
+        font-size: 13px;
+        padding: 7px 12px;
+        outline: none;
+        transition: border-color 0.2s;
+        width: 220px;
+      }
+      .search-input::placeholder {
+        color: var(--muted);
+      }
+      .search-input:focus {
+        border-color: rgba(59, 130, 246, 0.4);
+      }
+      .btn-sm {
+        font-size: 12px;
+        font-family: var(--font);
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--muted);
+        padding: 7px 14px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .btn-sm:hover {
+        border-color: var(--border2);
+        color: var(--text);
+      }
+      .table-wrap {
+        overflow-x: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      thead tr {
+        border-bottom: 1px solid var(--border);
+      }
+      th {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        padding: 12px 16px;
+        text-align: left;
+        white-space: nowrap;
+      }
+      td {
+        font-size: 13px;
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border);
+        vertical-align: middle;
+      }
+      tr:last-child td {
+        border-bottom: none;
+      }
+      tr:hover td {
+        background: rgba(255, 255, 255, 0.02);
+      }
+      .td-teks {
+        max-width: 280px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: var(--muted);
+      }
+      .badge-kat {
+        font-size: 11px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 100px;
+        padding: 3px 10px;
+        color: var(--muted);
+        text-transform: capitalize;
+        white-space: nowrap;
+      }
+      .badge-urg {
+        font-size: 11px;
+        border-radius: 100px;
+        padding: 3px 10px;
+        white-space: nowrap;
+        font-weight: 500;
+      }
+      .badge-urg.red {
+        background: rgba(239, 68, 68, 0.12);
+        color: #fca5a5;
+        border: 1px solid rgba(239, 68, 68, 0.25);
+      }
+      .badge-urg.yellow {
+        background: rgba(245, 158, 11, 0.12);
+        color: #fcd34d;
+        border: 1px solid rgba(245, 158, 11, 0.25);
+      }
+      .badge-urg.green {
+        background: rgba(34, 197, 94, 0.12);
+        color: #86efac;
+        border: 1px solid rgba(34, 197, 94, 0.25);
+      }
+      .badge-urg.gray {
+        background: rgba(107, 114, 128, 0.12);
+        color: #9ca3af;
+        border: 1px solid rgba(107, 114, 128, 0.25);
+      }
+      .conf-bar {
+        width: 60px;
+        height: 4px;
+        background: var(--surface2);
+        border-radius: 100px;
+        overflow: hidden;
+        display: inline-block;
+        vertical-align: middle;
+        margin-right: 6px;
+      }
+      .conf-fill {
+        height: 100%;
+        background: var(--accent);
+        border-radius: 100px;
+      }
+
+      /* PAGINATION */
+      .pagination {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 22px;
+        border-top: 1px solid var(--border);
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .page-btns {
+        display: flex;
+        gap: 6px;
+      }
+      .page-btn {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--muted);
+        padding: 5px 10px;
+        cursor: pointer;
+        font-family: var(--mono);
+        font-size: 12px;
+        transition: all 0.2s;
+      }
+      .page-btn:hover:not(:disabled) {
+        border-color: var(--border2);
+        color: var(--text);
+      }
+      .page-btn:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+      }
+      .page-btn.active {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+
+      /* LOADING SKELETON */
+      .skeleton {
+        background: linear-gradient(
+          90deg,
+          var(--surface2) 25%,
+          rgba(255, 255, 255, 0.04) 50%,
+          var(--surface2) 75%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 1.4s infinite;
+        border-radius: 6px;
+        height: 18px;
+      }
+      @keyframes shimmer {
+        0% {
+          background-position: 200% 0;
+        }
+        100% {
+          background-position: -200% 0;
+        }
+      }
+
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(14px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .fade-in {
+        animation: fadeUp 0.5s ease both;
+      }
+
+      /* EMPTY */
+      .empty-state {
+        text-align: center;
+        padding: 48px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .empty-icon {
+        font-size: 36px;
+        margin-bottom: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <nav>
+      <div class="nav-brand">Si<span>Padu</span></div>
+      <div class="nav-links">
+        <a href="/" class="nav-link">Input</a>
+        <a href="/dashboard" class="nav-link active">Dashboard</a>
+      </div>
+    </nav>
+
+    <div class="wrap">
+      <!-- KPI -->
+      <div class="section-title">Ringkasan</div>
+      <div class="kpi-grid fade-in" id="kpi-grid">
+        <div class="kpi blue">
+          <div class="kpi-label">Total Pengaduan</div>
+          <div class="kpi-val" id="kpi-total">—</div>
+          <div class="kpi-sub">semua waktu</div>
+        </div>
+        <div class="kpi red">
+          <div class="kpi-label">Sangat Urgen</div>
+          <div class="kpi-val" id="kpi-su">—</div>
+          <div class="kpi-sub">perlu tindakan segera</div>
+        </div>
+        <div class="kpi yellow">
+          <div class="kpi-label">Urgen</div>
+          <div class="kpi-val" id="kpi-u">—</div>
+          <div class="kpi-sub">perlu ditindaklanjuti</div>
+        </div>
+        <div class="kpi green">
+          <div class="kpi-label">Biasa / Tidak Urgen</div>
+          <div class="kpi-val" id="kpi-b">—</div>
+          <div class="kpi-sub">prioritas rendah</div>
+        </div>
+      </div>
+
+      <!-- CHARTS ROW 1 -->
+      <div class="section-title">Distribusi</div>
+      <div class="charts-row fade-in">
+        <div class="chart-card">
+          <div class="section-title" style="margin-bottom: 18px">
+            Per Kategori
+          </div>
+          <div class="chart-wrap"><canvas id="chart-kat"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="section-title" style="margin-bottom: 18px">
+            Per Urgensi
+          </div>
+          <div class="urg-bars" id="urg-bars">
+            <div class="skeleton" style="height: 24px"></div>
+            <div class="skeleton" style="height: 24px"></div>
+            <div class="skeleton" style="height: 24px"></div>
+            <div class="skeleton" style="height: 24px"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHARTS ROW 2 -->
+      <div class="charts-row fade-in" style="margin-bottom: 32px">
+        <div class="chart-card wide">
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 18px;
+            "
+          >
+            <div class="section-title" style="margin: 0">Tren Pengaduan</div>
+            <div style="display: flex; gap: 6px">
+              <button
+                class="btn-sm"
+                id="btn-harian"
+                onclick="switchTren('harian')"
+              >
+                Harian
+              </button>
+              <button
+                class="btn-sm"
+                id="btn-mingguan"
+                onclick="switchTren('mingguan')"
+              >
+                Mingguan
+              </button>
+            </div>
+          </div>
+          <div class="chart-wrap tall"><canvas id="chart-tren"></canvas></div>
+        </div>
+      </div>
+
+      <!-- RIWAYAT TABLE -->
+      <div class="section-title">Riwayat Lengkap</div>
+      <div class="table-card fade-in">
+        <div class="table-header">
+          <span style="font-size: 13px; font-weight: 600" id="table-count"
+            >Memuat...</span
+          >
+          <div class="table-actions">
+            <input
+              class="search-input"
+              id="search-input"
+              placeholder="Cari teks pengaduan..."
+              oninput="onSearch()"
+            />
+            <button class="btn-sm" onclick="loadRiwayat(1)">↺ Refresh</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Teks Pengaduan</th>
+                <th>Kategori</th>
+                <th>Instansi</th>
+                <th>Urgensi</th>
+                <th>Conf. Kat</th>
+                <th>Conf. Urg</th>
+                <th>Waktu</th>
+              </tr>
+            </thead>
+            <tbody id="table-body">
+              <tr>
+                <td colspan="8">
+                  <div class="empty-state">
+                    <div
+                      class="skeleton"
+                      style="height: 14px; margin: 0 auto; max-width: 200px"
+                    ></div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination">
+          <span id="page-info">—</span>
+          <div class="page-btns" id="page-btns"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ── STATE ────────────────────────────────────────────────
+      let statsData = null;
+      let trenMode = "harian";
+      let chartKat = null;
+      let chartTren = null;
+      let currentPage = 1;
+      let totalItems = 0;
+      const PAGE_LIMIT = 20;
+      let searchTimer = null;
+
+      // ── CHART DEFAULTS ────────────────────────────────────────
+      const CHART_DEFAULTS = {
+        color: "#e8eaf0",
+        plugins: {
+          legend: {
+            labels: { color: "#6b7280", font: { family: "'Sora'", size: 11 } },
+          },
+        },
+      };
+      Chart.defaults.color = "#6b7280";
+      Chart.defaults.borderColor = "rgba(255,255,255,0.06)";
+      Chart.defaults.font.family = "'Sora'";
+
+      // ── LOAD STATS ────────────────────────────────────────────
+      async function loadStats() {
+        try {
+          const r = await fetch("/api/stats");
+          if (!r.ok) throw new Error(await r.text());
+          statsData = await r.json();
+          renderKPI();
+          renderKatChart();
+          renderUrgBars();
+          renderTrenChart();
+        } catch (e) {
+          console.error("Stats error:", e);
+        }
+      }
+
+      function renderKPI() {
+        const d = statsData;
+        document.getElementById("kpi-total").textContent = d.total ?? 0;
+
+        const urgMap = {};
+        (d.urgensi || []).forEach((u) => (urgMap[u.urgensi] = u.total));
+        document.getElementById("kpi-su").textContent =
+          urgMap["sangat_urgen"] ?? 0;
+        document.getElementById("kpi-u").textContent = urgMap["urgen"] ?? 0;
+        document.getElementById("kpi-b").textContent =
+          (urgMap["biasa"] ?? 0) + (urgMap["tidak_urgen"] ?? 0);
+      }
+
+      function renderKatChart() {
+        const cats = statsData.kategori || [];
+        const labels = cats.map((c) => c.kategori);
+        const vals = cats.map((c) => c.total);
+        const colors = ["#3b82f6", "#8b5cf6", "#06b6d4", "#f59e0b", "#22c55e"];
+
+        if (chartKat) chartKat.destroy();
+        chartKat = new Chart(document.getElementById("chart-kat"), {
+          type: "doughnut",
+          data: {
+            labels,
+            datasets: [
+              {
+                data: vals,
+                backgroundColor: colors.map((c) => c + "cc"),
+                borderColor: colors,
+                borderWidth: 1.5,
+                hoverOffset: 6,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "65%",
+            plugins: {
+              legend: {
+                position: "right",
+                labels: {
+                  color: "#9ca3af",
+                  font: { size: 11 },
+                  padding: 14,
+                  boxWidth: 10,
+                },
+              },
+              tooltip: {
+                callbacks: {
+                  label: (ctx) => ` ${ctx.label}: ${ctx.raw} pengaduan`,
+                },
+              },
+            },
+          },
+        });
+      }
+
+      function renderUrgBars() {
+        const urgs = statsData.urgensi || [];
+        const total = urgs.reduce((s, u) => s + u.total, 0) || 1;
+        const ORDER = ["sangat_urgen", "urgen", "biasa", "tidak_urgen"];
+        const sorted = ORDER.map((k) =>
+          urgs.find((u) => u.urgensi === k),
+        ).filter(Boolean);
+
+        document.getElementById("urg-bars").innerHTML = sorted
+          .map((u) => {
+            const pct = Math.round((u.total / total) * 100);
+            return `
+      <div class="urg-row">
+        <span class="urg-icon">${u.urgensi_icon}</span>
+        <span class="urg-name">${u.urgensi_display}</span>
+        <div class="urg-bar-bg">
+          <div class="urg-bar-fill ${u.urgensi_color}" data-w="${pct}"></div>
+        </div>
+        <span class="urg-count">${u.total}</span>
+      </div>`;
+          })
+          .join("");
+
+        requestAnimationFrame(() => {
+          document.querySelectorAll(".urg-bar-fill").forEach((b) => {
+            requestAnimationFrame(() => (b.style.width = b.dataset.w + "%"));
+          });
+        });
+      }
+
+      function switchTren(mode) {
+        trenMode = mode;
+        document.getElementById("btn-harian").style.borderColor =
+          mode === "harian" ? "var(--accent)" : "";
+        document.getElementById("btn-harian").style.color =
+          mode === "harian" ? "var(--accent2)" : "";
+        document.getElementById("btn-mingguan").style.borderColor =
+          mode === "mingguan" ? "var(--accent)" : "";
+        document.getElementById("btn-mingguan").style.color =
+          mode === "mingguan" ? "var(--accent2)" : "";
+        renderTrenChart();
+      }
+
+      function renderTrenChart() {
+        if (!statsData) return;   // ← tambah ini
+        const rows = statsData[trenMode] || [];
+        const labels = rows.map((r) => r.tanggal || r.mulai);
+        const total = rows.map((r) => r.total);
+        const urgen = rows.map((r) => r.urgen_count);
+
+        if (chartTren) chartTren.destroy();
+        chartTren = new Chart(document.getElementById("chart-tren"), {
+          type: "line",
+          data: {
+            labels,
+            datasets: [
+              {
+                label: "Total Pengaduan",
+                data: total,
+                borderColor: "#3b82f6",
+                backgroundColor: "rgba(59,130,246,0.08)",
+                borderWidth: 2,
+                pointRadius: 3,
+                pointBackgroundColor: "#3b82f6",
+                fill: true,
+                tension: 0.35,
+              },
+              {
+                label: "Urgen/Sangat Urgen",
+                data: urgen,
+                borderColor: "#ef4444",
+                backgroundColor: "rgba(239,68,68,0.05)",
+                borderWidth: 2,
+                pointRadius: 3,
+                pointBackgroundColor: "#ef4444",
+                fill: true,
+                tension: 0.35,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                labels: { color: "#9ca3af", font: { size: 11 }, boxWidth: 12 },
+              },
+              tooltip: { mode: "index", intersect: false },
+            },
+            scales: {
+              x: {
+                grid: { color: "rgba(255,255,255,0.04)" },
+                ticks: {
+                  color: "#6b7280",
+                  font: { size: 10 },
+                  maxTicksLimit: 10,
+                },
+              },
+              y: {
+                grid: { color: "rgba(255,255,255,0.04)" },
+                ticks: { color: "#6b7280", font: { size: 10 }, stepSize: 1 },
+                beginAtZero: true,
+              },
+            },
+          },
+        });
+      }
+
+      // ── LOAD RIWAYAT ──────────────────────────────────────────
+      let searchQuery = "";
+
+      function onSearch() {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => {
+          searchQuery = document
+            .getElementById("search-input")
+            .value.toLowerCase();
+          loadRiwayat(1);
+        }, 400);
+      }
+
+      async function loadRiwayat(page) {
+        currentPage = page;
+        const tbody = document.getElementById("table-body");
+        tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="skeleton" style="height:14px;margin:0 auto;max-width:200px"></div></div></td></tr>`;
+
+        try {
+          const r = await fetch(
+            `/api/riwayat?page=${page}&limit=${PAGE_LIMIT}`,
+          );
+          if (!r.ok) throw new Error();
+          const d = await r.json();
+
+          totalItems = d.total;
+          let rows = d.data;
+
+          // Client-side search filter
+          if (searchQuery) {
+            rows = rows.filter(
+              (row) =>
+                (row.teks || "").toLowerCase().includes(searchQuery) ||
+                (row.kategori || "").toLowerCase().includes(searchQuery) ||
+                (row.urgensi || "").toLowerCase().includes(searchQuery),
+            );
+          }
+
+          document.getElementById("table-count").textContent =
+            `${totalItems} pengaduan tersimpan`;
+          document.getElementById("page-info").textContent =
+            `Halaman ${page} dari ${Math.ceil(totalItems / PAGE_LIMIT)}`;
+
+          if (rows.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📭</div>Belum ada data pengaduan.</div></td></tr>`;
+          } else {
+            tbody.innerHTML = rows
+              .map(
+                (row) => `
+        <tr>
+          <td style="font-family:var(--mono);font-size:11px;color:var(--muted)">${row.id}</td>
+          <td class="td-teks" title="${escHtml(row.teks)}">${escHtml(row.teks)}</td>
+          <td><span class="badge-kat">${row.kategori || "-"}</span></td>
+          <td style="font-size:12px;color:var(--muted);max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${row.instansi || "-"}</td>
+          <td><span class="badge-urg ${row.urgensi_color}">${row.urgensi_icon} ${row.urgensi_display}</span></td>
+          <td>
+            <div class="conf-bar"><div class="conf-fill" style="width:${row.kat_confidence}%"></div></div>
+            <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">${row.kat_confidence}%</span>
+          </td>
+          <td>
+            <div class="conf-bar"><div class="conf-fill" style="width:${row.urg_confidence}%"></div></div>
+            <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">${row.urg_confidence}%</span>
+          </td>
+          <td style="font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap">${row.created_at}</td>
+        </tr>
+      `,
+              )
+              .join("");
+          }
+
+          renderPagination(page, totalItems);
+        } catch (e) {
+          tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state">Gagal memuat data. Pastikan database tersambung.</div></td></tr>`;
+        }
+      }
+
+      function renderPagination(page, total) {
+        const totalPages = Math.ceil(total / PAGE_LIMIT);
+        const container = document.getElementById("page-btns");
+        if (totalPages <= 1) {
+          container.innerHTML = "";
+          return;
+        }
+
+        let btns = "";
+        btns += `<button class="page-btn" onclick="loadRiwayat(${page - 1})" ${page <= 1 ? "disabled" : ""}>‹</button>`;
+
+        for (
+          let p = Math.max(1, page - 2);
+          p <= Math.min(totalPages, page + 2);
+          p++
+        ) {
+          btns += `<button class="page-btn ${p === page ? "active" : ""}" onclick="loadRiwayat(${p})">${p}</button>`;
+        }
+
+        btns += `<button class="page-btn" onclick="loadRiwayat(${page + 1})" ${page >= totalPages ? "disabled" : ""}>›</button>`;
+        container.innerHTML = btns;
+      }
+
+      function escHtml(s) {
+        return (s || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      // ── INIT ──────────────────────────────────────────────────
+      loadStats();
+      loadRiwayat(1);
+
+      // Auto-refresh stats every 30s
+      setInterval(() => {
+        loadStats();
+        loadRiwayat(currentPage);
+      }, 30000);
+    </script>
+  </body>
+</html>

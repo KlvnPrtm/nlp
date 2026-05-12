@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SiPadu — Sistem Klasifikasi Pengaduan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+/* ── RESET & BASE ─────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #0a0c10;
+  --surface:   #111318;
+  --surface2:  #181c24;
+  --border:    rgba(255,255,255,0.07);
+  --border2:   rgba(255,255,255,0.12);
+  --text:      #e8eaf0;
+  --muted:     #6b7280;
+  --accent:    #3b82f6;
+  --accent2:   #60a5fa;
+  --red:       #ef4444;
+  --yellow:    #f59e0b;
+  --green:     #22c55e;
+  --gray-c:    #6b7280;
+  --radius:    14px;
+  --font:      'Sora', sans-serif;
+  --mono:      'JetBrains Mono', monospace;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── GRID NOISE BACKGROUND ─────────────────────────────── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── GLOW ORBS ─────────────────────────────────────────── */
+.orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(120px);
+  pointer-events: none;
+  z-index: 0;
+}
+.orb-1 {
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(59,130,246,0.12), transparent 70%);
+  top: -100px; left: -100px;
+}
+.orb-2 {
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, rgba(139,92,246,0.08), transparent 70%);
+  bottom: -80px; right: -80px;
+}
+
+/* ── LAYOUT ────────────────────────────────────────────── */
+.wrap {
+  position: relative; z-index: 1;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 40px 24px 80px;
+}
+
+/* ── HEADER ────────────────────────────────────────────── */
+header {
+  text-align: center;
+  margin-bottom: 48px;
+  animation: fadeDown 0.6s ease both;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(59,130,246,0.1);
+  border: 1px solid rgba(59,130,246,0.25);
+  color: var(--accent2);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 5px 14px;
+  border-radius: 100px;
+  margin-bottom: 20px;
+}
+.badge-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 2s ease infinite;
+}
+
+h1 {
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin-bottom: 12px;
+}
+h1 span { color: var(--accent2); }
+
+.subtitle {
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 300;
+  max-width: 500px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* ── STATUS BAR ────────────────────────────────────────── */
+#status-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 36px;
+  font-size: 12px;
+  font-family: var(--mono);
+  color: var(--muted);
+  animation: fadeIn 0.8s 0.3s ease both;
+}
+.status-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--gray-c);
+  transition: background 0.4s;
+}
+.status-dot.ok   { background: var(--green); box-shadow: 0 0 8px var(--green); }
+.status-dot.err  { background: var(--red); }
+.status-dot.load { background: var(--yellow); animation: pulse 1s ease infinite; }
+
+/* ── INPUT CARD ────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  margin-bottom: 20px;
+  animation: fadeUp 0.6s 0.15s ease both;
+  transition: border-color 0.3s;
+}
+.card:focus-within {
+  border-color: rgba(59,130,246,0.3);
+}
+
+.card-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+
+textarea {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.7;
+  padding: 16px 18px;
+  resize: vertical;
+  min-height: 130px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+textarea::placeholder { color: var(--muted); }
+textarea:focus { border-color: rgba(59,130,246,0.4); }
+
+.input-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 14px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+#char-count {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ── EXAMPLES ──────────────────────────────────────────── */
+.examples {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.ex-btn {
+  font-size: 11px;
+  font-family: var(--font);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  color: var(--muted);
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.ex-btn:hover {
+  border-color: var(--border2);
+  color: var(--text);
+}
+
+/* ── BUTTON ────────────────────────────────────────────── */
+.btn-primary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 28px;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.01em;
+  flex-shrink: 0;
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent2);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(59,130,246,0.3);
+}
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+.btn-icon { font-size: 16px; }
+
+/* ── LOADING ───────────────────────────────────────────── */
+.spinner {
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: none;
+}
+
+/* ── RESULT CARD ───────────────────────────────────────── */
+#result-section {
+  display: none;
+  animation: fadeUp 0.5s ease both;
+}
+
+.result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.result-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.result-time {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* Urgensi badge big */
+.urgensi-hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  border: 1px solid transparent;
+  position: relative;
+  overflow: hidden;
+}
+.urgensi-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.06;
+}
+.urgensi-hero.red    { border-color: rgba(239,68,68,0.35);   background: rgba(239,68,68,0.08); }
+.urgensi-hero.red::before { background: var(--red); }
+.urgensi-hero.yellow { border-color: rgba(245,158,11,0.35);  background: rgba(245,158,11,0.08); }
+.urgensi-hero.yellow::before { background: var(--yellow); }
+.urgensi-hero.green  { border-color: rgba(34,197,94,0.35);   background: rgba(34,197,94,0.08); }
+.urgensi-hero.green::before { background: var(--green); }
+.urgensi-hero.gray   { border-color: rgba(107,114,128,0.35); background: rgba(107,114,128,0.08); }
+.urgensi-hero.gray::before { background: var(--gray-c); }
+
+.urgensi-icon { font-size: 36px; line-height: 1; }
+.urgensi-info h2 {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.urgensi-info p {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* Grid detail */
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+@media (max-width: 520px) {
+  .detail-grid { grid-template-columns: 1fr; }
+}
+
+.detail-box {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+.detail-box .lbl {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.detail-box .val {
+  font-size: 15px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.detail-box .conf {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* Confidence bars */
+.prob-section { margin-bottom: 16px; }
+.prob-title {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.prob-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 7px;
+}
+.prob-name {
+  font-size: 12px;
+  font-family: var(--mono);
+  color: var(--muted);
+  width: 110px;
+  flex-shrink: 0;
+  text-transform: capitalize;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.prob-bar-bg {
+  flex: 1;
+  height: 5px;
+  background: var(--surface2);
+  border-radius: 100px;
+  overflow: hidden;
+}
+.prob-bar-fill {
+  height: 100%;
+  border-radius: 100px;
+  background: var(--accent);
+  transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+  width: 0%;
+}
+.prob-bar-fill.top { background: var(--accent2); }
+.prob-val {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  width: 38px;
+  text-align: right;
+}
+
+/* Input text preview */
+.teks-preview {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 10px;
+  padding: 14px 16px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* ── HISTORY ───────────────────────────────────────────── */
+#history-section {
+  margin-top: 40px;
+  animation: fadeIn 0.5s ease both;
+}
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.history-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.history-clear {
+  font-size: 11px;
+  color: var(--muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: color 0.2s;
+}
+.history-clear:hover { color: var(--red); }
+
+.history-list { display: flex; flex-direction: column; gap: 8px; }
+
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.history-item:hover {
+  border-color: var(--border2);
+  background: var(--surface2);
+}
+.history-urg {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.history-meta {
+  flex: 1;
+  min-width: 0;
+}
+.history-teks {
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 3px;
+}
+.history-sub {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+.history-kat {
+  font-size: 11px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 3px 10px;
+  color: var(--muted);
+  flex-shrink: 0;
+  text-transform: capitalize;
+}
+
+/* ── ERROR ─────────────────────────────────────────────── */
+.error-box {
+  background: rgba(239,68,68,0.08);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: #fca5a5;
+  display: none;
+  margin-bottom: 16px;
+}
+
+/* ── ANIMATIONS ────────────────────────────────────────── */
+@keyframes fadeDown {
+  from { opacity:0; transform: translateY(-20px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+@keyframes fadeUp {
+  from { opacity:0; transform: translateY(16px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity:0; } to { opacity:1; }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+</style>
+</head>
+<body>
+
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+
+<div class="wrap">
+
+  <!-- HEADER -->
+  <header>
+    <div class="badge">
+      <span class="badge-dot"></span>
+      IndoBERT · NLP Classifier
+    </div>
+    <h1>Sistem Klasifikasi<br/><span>Pengaduan Masyarakat</span></h1>
+    <p class="subtitle">Masukkan teks pengaduan — sistem akan menentukan kategori, instansi yang bertanggung jawab, dan tingkat urgensinya secara otomatis.</p>
+  </header>
+
+  <!-- STATUS -->
+  <div id="status-bar">
+    <span class="status-dot load" id="status-dot"></span>
+    <span id="status-text">Menghubungkan ke server...</span>
+  </div>
+
+  <!-- INPUT CARD -->
+  <div class="card">
+    <div class="card-label">Teks Pengaduan</div>
+
+    <textarea id="input-text" placeholder="Contoh: Jalan di depan pasar retak parah dan berlubang besar, sudah berbahaya bagi pengendara motor..." rows="5" maxlength="1000"></textarea>
+
+    <div class="input-footer">
+      <div class="examples">
+        <button class="ex-btn" onclick="fillExample(0)">🏗️ Infrastruktur</button>
+        <button class="ex-btn" onclick="fillExample(1)">🗑️ Kebersihan</button>
+        <button class="ex-btn" onclick="fillExample(2)">🚨 Keamanan</button>
+        <button class="ex-btn" onclick="fillExample(3)">🏥 Kesehatan</button>
+        <button class="ex-btn" onclick="fillExample(4)">📋 Administrasi</button>
+      </div>
+      <span id="char-count">0 / 1000</span>
+    </div>
+  </div>
+
+  <!-- ERROR -->
+  <div class="error-box" id="error-box"></div>
+
+  <!-- SUBMIT -->
+  <div style="display:flex; justify-content:flex-end; margin-bottom:28px;">
+    <button class="btn-primary" id="btn-predict" onclick="predict()">
+      <span class="btn-icon">⚡</span>
+      <span id="btn-text">Analisis Pengaduan</span>
+      <span class="spinner" id="spinner"></span>
+    </button>
+  </div>
+
+  <!-- RESULT -->
+  <div id="result-section">
+    <div class="card">
+      <div class="result-header">
+        <span class="result-title">Hasil Analisis</span>
+        <span class="result-time" id="result-time"></span>
+      </div>
+
+      <!-- Urgensi hero -->
+      <div class="urgensi-hero" id="urgensi-hero">
+        <div class="urgensi-icon" id="urgensi-icon"></div>
+        <div class="urgensi-info">
+          <h2 id="urgensi-label"></h2>
+          <p id="urgensi-conf"></p>
+        </div>
+      </div>
+
+      <!-- Detail grid -->
+      <div class="detail-grid">
+        <div class="detail-box">
+          <div class="lbl">Kategori</div>
+          <div class="val" id="detail-kategori"></div>
+          <div class="conf" id="detail-kat-conf"></div>
+        </div>
+        <div class="detail-box">
+          <div class="lbl">Instansi Terkait</div>
+          <div class="val" id="detail-instansi" style="font-size:13px;"></div>
+        </div>
+      </div>
+
+      <!-- Probability bars -->
+      <div class="prob-section">
+        <div class="prob-title">Distribusi Kategori</div>
+        <div id="prob-kat"></div>
+      </div>
+      <div class="prob-section">
+        <div class="prob-title">Distribusi Urgensi</div>
+        <div id="prob-urg"></div>
+      </div>
+
+      <!-- Input preview -->
+      <div class="prob-title" style="margin-bottom:8px;">Teks yang Dianalisis</div>
+      <div class="teks-preview" id="teks-preview"></div>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div id="history-section" style="display:none;">
+    <div class="history-header">
+      <span class="history-title">Riwayat Analisis</span>
+      <button class="history-clear" onclick="clearHistory()">Hapus semua</button>
+    </div>
+    <div class="history-list" id="history-list"></div>
+  </div>
+
+</div>
+
+<script>
+// ── EXAMPLES ─────────────────────────────────────────────
+const EXAMPLES = [
+  "Jalan di depan pasar retak parah dan berlubang besar, sudah berbahaya bagi pengendara motor terutama saat hujan malam hari",
+  "Sampah sudah menumpuk lebih dari seminggu di tempat pembuangan dekat perumahan kami, baunya sangat mengganggu warga sekitar",
+  "Tadi malam ada begal bersenjata menyerang warga di gang sempit dekat masjid, warga ketakutan dan minta segera ditangani",
+  "Puskesmas tutup saat jam kerja tanpa pemberitahuan, pasien lansia terpaksa pulang tanpa mendapat pelayanan apapun",
+  "KTP saya sudah diajukan 3 bulan lalu tapi belum juga jadi, petugas tidak memberikan informasi yang jelas kapan selesainya",
+];
+
+function fillExample(i) {
+  const ta = document.getElementById('input-text');
+  ta.value = EXAMPLES[i];
+  updateCount();
+  ta.focus();
+}
+
+// ── CHAR COUNT ────────────────────────────────────────────
+document.getElementById('input-text').addEventListener('input', updateCount);
+function updateCount() {
+  const v = document.getElementById('input-text').value.length;
+  document.getElementById('char-count').textContent = `${v} / 1000`;
+}
+
+// ── STATUS CHECK ──────────────────────────────────────────
+async function checkStatus() {
+  const dot  = document.getElementById('status-dot');
+  const txt  = document.getElementById('status-text');
+  try {
+    const r = await fetch('/api/status');
+    const d = await r.json();
+    if (d.loaded) {
+      dot.className = 'status-dot ok';
+      txt.textContent = `Model siap · ${d.device.toUpperCase()}`;
+    } else if (d.error) {
+      dot.className = 'status-dot err';
+      txt.textContent = `Error: ${d.error}`;
+    } else {
+      dot.className = 'status-dot load';
+      txt.textContent = 'Model sedang dimuat...';
+      setTimeout(checkStatus, 3000);
+    }
+  } catch {
+    dot.className = 'status-dot err';
+    txt.textContent = 'Server tidak dapat dijangkau';
+  }
+}
+checkStatus();
+
+// ── PREDICT ───────────────────────────────────────────────
+async function predict() {
+  const text = document.getElementById('input-text').value.trim();
+  const errBox = document.getElementById('error-box');
+  errBox.style.display = 'none';
+
+  if (!text || text.length < 5) {
+    showError('Masukkan teks pengaduan minimal 5 karakter.');
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const res  = await fetch('/api/predict', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      showError(data.error || 'Terjadi kesalahan pada server.');
+      return;
+    }
+
+    renderResult(data);
+    saveHistory(data);
+
+  } catch (e) {
+    showError('Tidak dapat terhubung ke server. Pastikan Flask berjalan.');
+  } finally {
+    setLoading(false);
+  }
+}
+
+// ── RENDER RESULT ─────────────────────────────────────────
+function renderResult(d) {
+  const section = document.getElementById('result-section');
+  section.style.display = 'block';
+
+  // Urgensi hero
+  const hero = document.getElementById('urgensi-hero');
+  const COLOR_MAP = { red:'red', yellow:'yellow', green:'green', gray:'gray' };
+  hero.className = 'urgensi-hero ' + (COLOR_MAP[d.urgensi.color] || 'gray');
+  document.getElementById('urgensi-icon').textContent  = d.urgensi.icon;
+  document.getElementById('urgensi-label').textContent = d.urgensi.display;
+  document.getElementById('urgensi-conf').textContent  = `Keyakinan model: ${d.urgensi.confidence}%`;
+
+  // Detail
+  document.getElementById('detail-kategori').textContent  = d.kategori.label;
+  document.getElementById('detail-kat-conf').textContent  = `Confidence: ${d.kategori.confidence}%`;
+  document.getElementById('detail-instansi').textContent  = d.instansi;
+  document.getElementById('result-time').textContent      = d.timestamp;
+  document.getElementById('teks-preview').textContent     = '"' + d.teks + '"';
+
+  // Probability bars
+  renderProbBars('prob-kat', d.kategori.probabilities, d.kategori.label);
+  renderProbBars('prob-urg', d.urgensi.probabilities, d.urgensi.label);
+
+  section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function renderProbBars(containerId, probs, topLabel) {
+  const container = document.getElementById(containerId);
+  const sorted = Object.entries(probs).sort((a, b) => b[1] - a[1]);
+  container.innerHTML = sorted.map(([k, v]) => `
+    <div class="prob-row">
+      <span class="prob-name">${k.replace('_',' ')}</span>
+      <div class="prob-bar-bg">
+        <div class="prob-bar-fill ${k === topLabel ? 'top' : ''}" data-w="${v}" style="width:0%"></div>
+      </div>
+      <span class="prob-val">${v}%</span>
+    </div>
+  `).join('');
+
+  // Animate bars
+  requestAnimationFrame(() => {
+    container.querySelectorAll('.prob-bar-fill').forEach(bar => {
+      const w = bar.dataset.w;
+      requestAnimationFrame(() => { bar.style.width = w + '%'; });
+    });
+  });
+}
+
+// ── HISTORY ───────────────────────────────────────────────
+let history = JSON.parse(localStorage.getItem('sipadu_history') || '[]');
+
+function saveHistory(d) {
+  history.unshift({
+    teks:     d.teks,
+    kategori: d.kategori.label,
+    urgensi:  d.urgensi,
+    instansi: d.instansi,
+    ts:       d.timestamp,
+  });
+  if (history.length > 20) history.pop();
+  localStorage.setItem('sipadu_history', JSON.stringify(history));
+  renderHistory();
+}
+
+function renderHistory() {
+  const section = document.getElementById('history-section');
+  const list    = document.getElementById('history-list');
+  if (history.length === 0) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+
+  list.innerHTML = history.map((h, i) => `
+    <div class="history-item" onclick="loadHistory(${i})">
+      <span class="history-urg">${h.urgensi.icon}</span>
+      <div class="history-meta">
+        <div class="history-teks">${h.teks}</div>
+        <div class="history-sub">${h.urgensi.display} · ${h.ts}</div>
+      </div>
+      <span class="history-kat">${h.kategori}</span>
+    </div>
+  `).join('');
+}
+
+function loadHistory(i) {
+  const h = history[i];
+  document.getElementById('input-text').value = h.teks;
+  updateCount();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function clearHistory() {
+  history = [];
+  localStorage.removeItem('sipadu_history');
+  renderHistory();
+}
+
+// ── UTILS ─────────────────────────────────────────────────
+function setLoading(on) {
+  document.getElementById('btn-predict').disabled = on;
+  document.getElementById('btn-text').textContent = on ? 'Menganalisis...' : 'Analisis Pengaduan';
+  document.getElementById('spinner').style.display = on ? 'block' : 'none';
+  document.getElementById('btn-icon') && (document.querySelector('.btn-icon').style.display = on ? 'none' : 'inline');
+}
+
+function showError(msg) {
+  const b = document.getElementById('error-box');
+  b.textContent = '⚠️ ' + msg;
+  b.style.display = 'block';
+}
+
+// Enter to submit
+document.getElementById('input-text').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.ctrlKey) predict();
+});
+
+// Init history
+renderHistory();
+</script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+model_indobert_kategori/
+model_indobert_urgensi/
+Hasil/
+
+__pycache__/
+*.pyc
+.env
