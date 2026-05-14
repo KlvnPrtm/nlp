@@ -5,3 +5,4 @@ Hasil/
 __pycache__/
 *.pyc
 .env
+*.csv
