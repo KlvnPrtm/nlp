@@ -15,6 +15,9 @@
 
 import pandas as pd
 import numpy as np
+import os
+import random
+import sys
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.model_selection import train_test_split
@@ -23,8 +26,13 @@ from sklearn.metrics import classification_report, accuracy_score, confusion_mat
 import warnings
 warnings.filterwarnings("ignore")
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 # ── KONFIGURASI ──────────────────────────────────────────────
 FILE_DATA      = "data_pengaduan_berlabel_5.csv"
+FILE_DATA_TAMBAHAN = "data_tambahan_pengaduan.csv"
 MODEL_INDOBERT = "indobenchmark/indobert-base-p1"
 BATCH_SIZE     = 8
 MAX_LEN        = 128
@@ -32,6 +40,7 @@ EPOCHS         = 3
 LEARNING_RATE  = 2e-5
 TEST_SIZE      = 0.2
 RANDOM_STATE   = 42
+USE_CLASS_WEIGHTS = True
 
 # Mapping instansi (untuk output yang lebih informatif)
 INSTANSI_MAP = {
@@ -43,6 +52,17 @@ INSTANSI_MAP = {
 }
 # ─────────────────────────────────────────────────────────────
 
+def set_seed(seed=RANDOM_STATE):
+    random.seed(seed)
+    np.random.seed(seed)
+    try:
+        import torch
+        torch.manual_seed(seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(seed)
+    except ImportError:
+        pass
+
 
 def load_data():
     print("=" * 60)
@@ -51,8 +71,18 @@ def load_data():
     print("=" * 60)
 
     df = pd.read_csv(FILE_DATA, encoding="utf-8-sig")
+    if os.path.exists(FILE_DATA_TAMBAHAN):
+        extra = pd.read_csv(FILE_DATA_TAMBAHAN, encoding="utf-8-sig")
+        missing_cols = {"teks_bersih", "kategori", "urgensi"} - set(extra.columns)
+        if missing_cols:
+            raise ValueError(f"{FILE_DATA_TAMBAHAN} kurang kolom: {sorted(missing_cols)}")
+        print(f"✓ Data tambahan terbaca: {len(extra)} baris")
+        df = pd.concat([df, extra], ignore_index=True)
+
     df = df.dropna(subset=["teks_bersih", "kategori", "urgensi"])
     df = df[df["teks_bersih"].str.strip().str.len() > 5]
+    df["teks_bersih"] = df["teks_bersih"].astype(str).str.strip()
+    df = df.drop_duplicates(subset=["teks_bersih", "kategori", "urgensi"])
 
     print(f"\n✓ Total data: {len(df)} baris\n")
 
@@ -106,8 +136,13 @@ def latih_indobert(X_train, X_test, y_train, y_test, le, nama_task):
     print(f"  Device: {device}")
 
     tokenizer = AutoTokenizer.from_pretrained(MODEL_INDOBERT)
+    id2label = {i: label for i, label in enumerate(le.classes_)}
+    label2id = {label: i for i, label in id2label.items()}
     model = AutoModelForSequenceClassification.from_pretrained(
-        MODEL_INDOBERT, num_labels=len(le.classes_)
+        MODEL_INDOBERT,
+        num_labels=len(le.classes_),
+        id2label=id2label,
+        label2id=label2id,
     ).to(device)
 
     class PengaduanDataset(torch.utils.data.Dataset):
@@ -131,6 +166,12 @@ def latih_indobert(X_train, X_test, y_train, y_test, le, nama_task):
     scheduler = get_linear_schedule_with_warmup(
         optimizer, num_warmup_steps=int(0.1*total_steps), num_training_steps=total_steps
     )
+    class_weights = None
+    if USE_CLASS_WEIGHTS:
+        counts = np.bincount(y_train, minlength=len(le.classes_))
+        weights = len(y_train) / (len(le.classes_) * np.maximum(counts, 1))
+        class_weights = torch.tensor(weights, dtype=torch.float).to(device)
+        print("  Class weights:", {label: round(float(class_weights[i].cpu()), 3) for i, label in id2label.items()})
 
     history = []
     for epoch in range(EPOCHS):
@@ -138,7 +179,9 @@ def latih_indobert(X_train, X_test, y_train, y_test, le, nama_task):
         total_loss = 0
         for batch in train_dl:
             batch = {k: v.to(device) for k, v in batch.items()}
-            loss = model(**batch).loss
+            labels = batch.pop("labels")
+            logits = model(**batch).logits
+            loss = torch.nn.functional.cross_entropy(logits, labels, weight=class_weights)
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             optimizer.step(); scheduler.step(); optimizer.zero_grad()
@@ -245,6 +288,8 @@ def buat_visualisasi(acc_svm_kat, acc_bert_kat, acc_svm_urg, acc_bert_urg,
 
 
 def main():
+    set_seed()
+
     # Load data
     df = load_data()
 
@@ -257,9 +302,14 @@ def main():
     y_urg  = le_urg.fit_transform(df["urgensi"].values)
 
     # Split (sama untuk kedua task agar perbandingan adil)
+    stratify_key = df["kategori"].astype(str) + "|" + df["urgensi"].astype(str)
+    if stratify_key.value_counts().min() < 2:
+        print("\n⚠ Kombinasi kategori+urgensi terlalu sedikit untuk stratify gabungan; pakai stratify kategori.")
+        stratify_key = y_kat
+
     X_train, X_test, yk_train, yk_test, yu_train, yu_test = train_test_split(
         X, y_kat, y_urg,
-        test_size=TEST_SIZE, random_state=RANDOM_STATE, stratify=y_kat
+        test_size=TEST_SIZE, random_state=RANDOM_STATE, stratify=stratify_key
     )
 
     print(f"\nData training: {len(X_train)} | Data testing: {len(X_test)}")

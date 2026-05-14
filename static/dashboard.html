@@ -1,987 +1,633 @@
 <!doctype html>
-<html lang="id">
-  <head>    
+<html lang="id" data-page="dashboard">
+  <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SiPadu — Dashboard Statistik</title>
+    <title>SiPadu - Dashboard Admin</title>
+    <script>
+      (() => {
+        const saved = localStorage.getItem("sipadu_theme");
+        document.documentElement.dataset.theme = saved === "dark" ? "dark" : "light";
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
-      rel="stylesheet"
-    />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-    <style>
-      *,  
-      *::before,
-      *::after {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
-      :root {
-        --bg: #0a0c10;
-        --surface: #111318;
-        --surface2: #181c24;
-        --border: rgba(255, 255, 255, 0.07);
-        --border2: rgba(255, 255, 255, 0.13);
-        --text: #e8eaf0;
-        --muted: #6b7280;
-        --accent: #3b82f6;
-        --accent2: #60a5fa;
-        --red: #ef4444;
-        --yellow: #f59e0b;
-        --green: #22c55e;
-        --gray-c: #6b7280;
-        --radius: 14px;
-        --font: "Sora", sans-serif;
-        --mono: "JetBrains Mono", monospace;
-      }
-      html {
-        scroll-behavior: smooth;
-      }
-      body {
-        font-family: var(--font);
-        background: var(--bg);
-        color: var(--text);
-        min-height: 100vh;
-        overflow-x: hidden;
-      }
-      body::before {
-        content: "";
-        position: fixed;
-        inset: 0;
-        background-image:
-          linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
-        background-size: 40px 40px;
-        pointer-events: none;
-        z-index: 0;
-      }
-      .orb {
-        position: fixed;
-        border-radius: 50%;
-        filter: blur(120px);
-        pointer-events: none;
-        z-index: 0;
-      }
-      .orb-1 {
-        width: 500px;
-        height: 500px;
-        background: radial-gradient(
-          circle,
-          rgba(59, 130, 246, 0.1),
-          transparent 70%
-        );
-        top: -100px;
-        left: -100px;
-      }
-      .orb-2 {
-        width: 400px;
-        height: 400px;
-        background: radial-gradient(
-          circle,
-          rgba(139, 92, 246, 0.07),
-          transparent 70%
-        );
-        bottom: -80px;
-        right: -80px;
-      }
-
-      /* NAV */
-      nav {
-        position: relative;
-        z-index: 10;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 18px 32px;
-        border-bottom: 1px solid var(--border);
-        background: rgba(10, 12, 16, 0.8);
-        backdrop-filter: blur(12px);
-      }
-      .nav-brand {
-        font-size: 16px;
-        font-weight: 700;
-        letter-spacing: -0.01em;
-        color: var(--text);
-      }
-      .nav-brand span {
-        color: var(--accent2);
-      }
-      .nav-links {
-        display: flex;
-        gap: 4px;
-      }
-      .nav-link {
-        font-size: 13px;
-        font-weight: 500;
-        color: var(--muted);
-        padding: 7px 14px;
-        border-radius: 8px;
-        text-decoration: none;
-        transition: all 0.2s;
-      }
-      .nav-link:hover,
-      .nav-link.active {
-        background: var(--surface2);
-        color: var(--text);
-      }
-
-      /* LAYOUT */
-      .wrap {
-        position: relative;
-        z-index: 1;
-        max-width: 1100px;
-        margin: 0 auto;
-        padding: 36px 24px 80px;
-      }
-
-      /* SECTION TITLE */
-      .section-title {
-        font-size: 10px;
-        font-weight: 700;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        color: var(--muted);
-        margin-bottom: 16px;
-      }
-
-      /* KPI CARDS */
-      .kpi-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 12px;
-        margin-bottom: 32px;
-      }
-      @media (max-width: 700px) {
-        .kpi-grid {
-          grid-template-columns: 1fr 1fr;
-        }
-      }
-      .kpi {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        padding: 20px 22px;
-      }
-      .kpi-label {
-        font-size: 10px;
-        font-weight: 600;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: var(--muted);
-        margin-bottom: 10px;
-      }
-      .kpi-val {
-        font-size: 28px;
-        font-weight: 700;
-        letter-spacing: -0.02em;
-        line-height: 1;
-      }
-      .kpi-sub {
-        font-size: 11px;
-        color: var(--muted);
-        margin-top: 6px;
-        font-family: var(--mono);
-      }
-      .kpi.red .kpi-val {
-        color: var(--red);
-      }
-      .kpi.yellow .kpi-val {
-        color: var(--yellow);
-      }
-      .kpi.green .kpi-val {
-        color: var(--green);
-      }
-      .kpi.blue .kpi-val {
-        color: var(--accent2);
-      }
-
-      /* CHARTS ROW */
-      .charts-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-        margin-bottom: 12px;
-      }
-      @media (max-width: 700px) {
-        .charts-row {
-          grid-template-columns: 1fr;
-        }
-      }
-      .chart-card {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        padding: 22px 24px;
-      }
-      .chart-card.wide {
-        grid-column: 1/-1;
-      }
-      .chart-wrap {
-        position: relative;
-        height: 200px;
-      }
-      .chart-wrap.tall {
-        height: 260px;
-      }
-
-      /* URGENSI BARS */
-      .urg-bars {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        margin-top: 4px;
-      }
-      .urg-row {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-      }
-      .urg-icon {
-        font-size: 16px;
-        width: 20px;
-        text-align: center;
-        flex-shrink: 0;
-      }
-      .urg-name {
-        font-size: 12px;
-        color: var(--muted);
-        width: 90px;
-        flex-shrink: 0;
-      }
-      .urg-bar-bg {
-        flex: 1;
-        height: 8px;
-        background: var(--surface2);
-        border-radius: 100px;
-        overflow: hidden;
-      }
-      .urg-bar-fill {
-        height: 100%;
-        border-radius: 100px;
-        transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
-        width: 0;
-      }
-      .urg-bar-fill.red {
-        background: var(--red);
-      }
-      .urg-bar-fill.yellow {
-        background: var(--yellow);
-      }
-      .urg-bar-fill.green {
-        background: var(--green);
-      }
-      .urg-bar-fill.gray {
-        background: var(--gray-c);
-      }
-      .urg-count {
-        font-family: var(--mono);
-        font-size: 12px;
-        color: var(--muted);
-        width: 30px;
-        text-align: right;
-      }
-
-      /* TABLE */
-      .table-card {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        overflow: hidden;
-        margin-bottom: 20px;
-      }
-      .table-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 18px 22px;
-        border-bottom: 1px solid var(--border);
-      }
-      .table-actions {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-      }
-      .search-input {
-        background: var(--surface2);
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        color: var(--text);
-        font-family: var(--font);
-        font-size: 13px;
-        padding: 7px 12px;
-        outline: none;
-        transition: border-color 0.2s;
-        width: 220px;
-      }
-      .search-input::placeholder {
-        color: var(--muted);
-      }
-      .search-input:focus {
-        border-color: rgba(59, 130, 246, 0.4);
-      }
-      .btn-sm {
-        font-size: 12px;
-        font-family: var(--font);
-        background: var(--surface2);
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        color: var(--muted);
-        padding: 7px 14px;
-        cursor: pointer;
-        transition: all 0.2s;
-      }
-      .btn-sm:hover {
-        border-color: var(--border2);
-        color: var(--text);
-      }
-      .table-wrap {
-        overflow-x: auto;
-      }
-      table {
-        width: 100%;
-        border-collapse: collapse;
-      }
-      thead tr {
-        border-bottom: 1px solid var(--border);
-      }
-      th {
-        font-size: 10px;
-        font-weight: 700;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: var(--muted);
-        padding: 12px 16px;
-        text-align: left;
-        white-space: nowrap;
-      }
-      td {
-        font-size: 13px;
-        padding: 12px 16px;
-        border-bottom: 1px solid var(--border);
-        vertical-align: middle;
-      }
-      tr:last-child td {
-        border-bottom: none;
-      }
-      tr:hover td {
-        background: rgba(255, 255, 255, 0.02);
-      }
-      .td-teks {
-        max-width: 280px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        color: var(--muted);
-      }
-      .badge-kat {
-        font-size: 11px;
-        background: var(--surface2);
-        border: 1px solid var(--border);
-        border-radius: 100px;
-        padding: 3px 10px;
-        color: var(--muted);
-        text-transform: capitalize;
-        white-space: nowrap;
-      }
-      .badge-urg {
-        font-size: 11px;
-        border-radius: 100px;
-        padding: 3px 10px;
-        white-space: nowrap;
-        font-weight: 500;
-      }
-      .badge-urg.red {
-        background: rgba(239, 68, 68, 0.12);
-        color: #fca5a5;
-        border: 1px solid rgba(239, 68, 68, 0.25);
-      }
-      .badge-urg.yellow {
-        background: rgba(245, 158, 11, 0.12);
-        color: #fcd34d;
-        border: 1px solid rgba(245, 158, 11, 0.25);
-      }
-      .badge-urg.green {
-        background: rgba(34, 197, 94, 0.12);
-        color: #86efac;
-        border: 1px solid rgba(34, 197, 94, 0.25);
-      }
-      .badge-urg.gray {
-        background: rgba(107, 114, 128, 0.12);
-        color: #9ca3af;
-        border: 1px solid rgba(107, 114, 128, 0.25);
-      }
-      .conf-bar {
-        width: 60px;
-        height: 4px;
-        background: var(--surface2);
-        border-radius: 100px;
-        overflow: hidden;
-        display: inline-block;
-        vertical-align: middle;
-        margin-right: 6px;
-      }
-      .conf-fill {
-        height: 100%;
-        background: var(--accent);
-        border-radius: 100px;
-      }
-
-      /* PAGINATION */
-      .pagination {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 14px 22px;
-        border-top: 1px solid var(--border);
-        font-size: 12px;
-        color: var(--muted);
-      }
-      .page-btns {
-        display: flex;
-        gap: 6px;
-      }
-      .page-btn {
-        background: var(--surface2);
-        border: 1px solid var(--border);
-        border-radius: 6px;
-        color: var(--muted);
-        padding: 5px 10px;
-        cursor: pointer;
-        font-family: var(--mono);
-        font-size: 12px;
-        transition: all 0.2s;
-      }
-      .page-btn:hover:not(:disabled) {
-        border-color: var(--border2);
-        color: var(--text);
-      }
-      .page-btn:disabled {
-        opacity: 0.35;
-        cursor: not-allowed;
-      }
-      .page-btn.active {
-        background: var(--accent);
-        border-color: var(--accent);
-        color: #fff;
-      }
-
-      /* LOADING SKELETON */
-      .skeleton {
-        background: linear-gradient(
-          90deg,
-          var(--surface2) 25%,
-          rgba(255, 255, 255, 0.04) 50%,
-          var(--surface2) 75%
-        );
-        background-size: 200% 100%;
-        animation: shimmer 1.4s infinite;
-        border-radius: 6px;
-        height: 18px;
-      }
-      @keyframes shimmer {
-        0% {
-          background-position: 200% 0;
-        }
-        100% {
-          background-position: -200% 0;
-        }
-      }
-
-      @keyframes fadeUp {
-        from {
-          opacity: 0;
-          transform: translateY(14px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-      .fade-in {
-        animation: fadeUp 0.5s ease both;
-      }
-
-      /* EMPTY */
-      .empty-state {
-        text-align: center;
-        padding: 48px;
-        color: var(--muted);
-        font-size: 14px;
-      }
-      .empty-icon {
-        font-size: 36px;
-        margin-bottom: 12px;
-      }
-    </style>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/styles.css" />
+    <script defer src="/static/theme.js"></script>
   </head>
   <body>
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
+    <div class="app-shell" data-sidebar="expanded" data-mobile-open="false">
+      <div class="sidebar-backdrop" data-sidebar-close></div>
+      <aside class="sidebar" aria-label="Navigasi utama">
+        <a class="brand" href="/" aria-label="Beranda SiPadu">
+          <span class="brand-mark" aria-hidden="true">Sp</span>
+          <span class="brand-text">
+            <span class="brand-title">SiPadu</span>
+            <span class="brand-sub">Pusat Kendali</span>
+          </span>
+        </a>
 
-    <nav>
-      <div class="nav-brand">Si<span>Padu</span></div>
-      <div class="nav-links">
-        <a href="/" class="nav-link">Input</a>
-        <a href="/dashboard" class="nav-link active">Dashboard</a>
-      </div>
-    </nav>
+        <nav class="nav-group" aria-label="Analisis">
+          <span class="nav-group-label">Analisis</span>
+          <a class="side-link" href="/">
+            <svg class="side-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3 4 7v6c0 4 3.4 7.6 8 8 4.6-.4 8-4 8-8V7Z" />
+              <path d="m9 12 2 2 4-4" />
+            </svg>
+            <span class="side-link-label">Beranda Analisis</span>
+          </a>
+        </nav>
 
-    <div class="wrap">
-      <!-- KPI -->
-      <div class="section-title">Ringkasan</div>
-      <div class="kpi-grid fade-in" id="kpi-grid">
-        <div class="kpi blue">
-          <div class="kpi-label">Total Pengaduan</div>
-          <div class="kpi-val" id="kpi-total">—</div>
-          <div class="kpi-sub">semua waktu</div>
-        </div>
-        <div class="kpi red">
-          <div class="kpi-label">Sangat Urgen</div>
-          <div class="kpi-val" id="kpi-su">—</div>
-          <div class="kpi-sub">perlu tindakan segera</div>
-        </div>
-        <div class="kpi yellow">
-          <div class="kpi-label">Urgen</div>
-          <div class="kpi-val" id="kpi-u">—</div>
-          <div class="kpi-sub">perlu ditindaklanjuti</div>
-        </div>
-        <div class="kpi green">
-          <div class="kpi-label">Biasa / Tidak Urgen</div>
-          <div class="kpi-val" id="kpi-b">—</div>
-          <div class="kpi-sub">prioritas rendah</div>
-        </div>
-      </div>
+        <nav class="nav-group" aria-label="Operasi">
+          <span class="nav-group-label">Operasi</span>
+          <a class="side-link active" href="#dashboard" data-nav="dashboard">
+            <svg class="side-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3" y="3" width="7" height="8" rx="1.5" />
+              <rect x="14" y="3" width="7" height="5" rx="1.5" />
+              <rect x="14" y="11" width="7" height="10" rx="1.5" />
+              <rect x="3" y="14" width="7" height="7" rx="1.5" />
+            </svg>
+            <span class="side-link-label">Dashboard Admin</span>
+          </a>
+          <a class="side-link" href="#data" data-nav="data">
+            <svg class="side-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <ellipse cx="12" cy="5" rx="8" ry="3" />
+              <path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5" />
+              <path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6" />
+            </svg>
+            <span class="side-link-label">Data Pengaduan</span>
+          </a>
+          <a class="side-link" href="#kategori" data-nav="kategori">
+            <svg class="side-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" />
+            </svg>
+            <span class="side-link-label">Kelola Kategori</span>
+          </a>
+          <a class="side-link" href="#training" data-nav="training">
+            <svg class="side-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3v12" />
+              <path d="m7 10 5 5 5-5" />
+              <path d="M5 21h14" />
+            </svg>
+            <span class="side-link-label">Dataset &amp; Training</span>
+          </a>
+        </nav>
 
-      <!-- CHARTS ROW 1 -->
-      <div class="section-title">Distribusi</div>
-      <div class="charts-row fade-in">
-        <div class="chart-card">
-          <div class="section-title" style="margin-bottom: 18px">
-            Per Kategori
+        <nav class="nav-group" aria-label="Sistem">
+          <span class="nav-group-label">Sistem</span>
+          <a class="side-link" href="#pengaturan" data-nav="pengaturan">
+            <svg class="side-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" />
+            </svg>
+            <span class="side-link-label">Pengaturan</span>
+          </a>
+        </nav>
+
+        <div class="sidebar-footer">
+          <div class="sidebar-status">
+            <span class="status-dot ok"></span>
+            <span>Panel admin aktif</span>
           </div>
-          <div class="chart-wrap"><canvas id="chart-kat"></canvas></div>
         </div>
-        <div class="chart-card">
-          <div class="section-title" style="margin-bottom: 18px">
-            Per Urgensi
+      </aside>
+      <main class="content-shell">
+        <header class="topbar">
+          <button class="icon-btn menu-toggle" type="button" data-sidebar-toggle aria-label="Buka menu">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+          </button>
+          <div class="topbar-title">
+            <span class="topbar-eyebrow" id="topbar-eyebrow">Dashboard Admin</span>
+            <span class="topbar-heading" id="topbar-heading">Pusat Kendali Pengaduan</span>
           </div>
-          <div class="urg-bars" id="urg-bars">
-            <div class="skeleton" style="height: 24px"></div>
-            <div class="skeleton" style="height: 24px"></div>
-            <div class="skeleton" style="height: 24px"></div>
-            <div class="skeleton" style="height: 24px"></div>
+          <div class="topbar-spacer"></div>
+          <div class="topbar-actions">
+            <span class="live-pill" id="last-updated">Belum dimuat</span>
+            <button class="icon-btn" type="button" id="refresh-btn" aria-label="Muat ulang">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M21 12a9 9 0 1 1-3-6.7" />
+                <path d="M21 4v5h-5" />
+              </svg>
+            </button>
+            <button class="theme-toggle" data-theme-toggle type="button" aria-label="Ganti tema" aria-pressed="false">
+              <span class="theme-toggle-track"><span class="theme-toggle-thumb"></span></span>
+              <span data-theme-label>Terang</span>
+            </button>
           </div>
-        </div>
-      </div>
-
-      <!-- CHARTS ROW 2 -->
-      <div class="charts-row fade-in" style="margin-bottom: 32px">
-        <div class="chart-card wide">
-          <div
-            style="
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              margin-bottom: 18px;
-            "
-          >
-            <div class="section-title" style="margin: 0">Tren Pengaduan</div>
-            <div style="display: flex; gap: 6px">
-              <button
-                class="btn-sm"
-                id="btn-harian"
-                onclick="switchTren('harian')"
-              >
-                Harian
-              </button>
-              <button
-                class="btn-sm"
-                id="btn-mingguan"
-                onclick="switchTren('mingguan')"
-              >
-                Mingguan
-              </button>
+        </header>
+        <div class="page">
+          <section class="app-section active" data-section="dashboard">
+            <div class="page-intro">
+              <div>
+                <span class="eyebrow">Ringkasan Operasional</span>
+                <h1>Pusat Kendali Pengaduan</h1>
+                <p>Pantau volume, urgensi, dan kesehatan model dalam satu pandangan. Aksi cepat tersedia di sisi kanan.</p>
+              </div>
+              <div class="row-end">
+                <div class="export-tools" role="group" aria-label="Unduh data">
+                  <label class="sr-only" for="dashboard-export-format">Pilih Format</label>
+                  <select id="dashboard-export-format" class="select export-format" aria-label="Pilih Format">
+                    <option value="csv">CSV</option>
+                    <option value="pdf">PDF</option>
+                  </select>
+                  <button class="btn" type="button" data-export>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12" /><path d="m7 10 5 5 5-5" /><path d="M5 21h14" /></svg>
+                    Unduh Data
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
-          <div class="chart-wrap tall"><canvas id="chart-tren"></canvas></div>
-        </div>
-      </div>
 
-      <!-- RIWAYAT TABLE -->
-      <div class="section-title">Riwayat Lengkap</div>
-      <div class="table-card fade-in">
-        <div class="table-header">
-          <span style="font-size: 13px; font-weight: 600" id="table-count"
-            >Memuat...</span
-          >
-          <div class="table-actions">
-            <input
-              class="search-input"
-              id="search-input"
-              placeholder="Cari teks pengaduan..."
-              oninput="onSearch()"
-            />
-            <button class="btn-sm" onclick="loadRiwayat(1)">↺ Refresh</button>
+            <div class="filter-bar" aria-label="Filter dashboard">
+              <label>
+                Rentang Awal
+                <input class="input" type="date" data-filter="date_from" />
+              </label>
+              <label>
+                Rentang Akhir
+                <input class="input" type="date" data-filter="date_to" />
+              </label>
+              <label>
+                Kategori
+                <select class="select js-category-filter" data-filter="kategori">
+                  <option value="">Semua kategori</option>
+                </select>
+              </label>
+              <label>
+                Urgensi
+                <select class="select" data-filter="urgensi">
+                  <option value="">Semua urgensi</option>
+                  <option value="sangat_urgen">Sangat Urgen</option>
+                  <option value="urgen">Urgen</option>
+                  <option value="biasa">Biasa</option>
+                  <option value="tidak_urgen">Tidak Urgen</option>
+                </select>
+              </label>
+              <label>
+                Instansi
+                <select class="select js-agency-filter" data-filter="instansi">
+                  <option value="">Semua instansi</option>
+                </select>
+              </label>
+              <label>
+                Kata Kunci
+                <input class="input" type="search" placeholder="Cari pengaduan..." data-filter="q" />
+              </label>
+              <div class="filter-actions">
+                <button class="btn btn-secondary filter-apply" type="button">Terapkan</button>
+                <button class="btn btn-ghost filter-reset" type="button">Reset</button>
+              </div>
+            </div>
+
+            <div class="filter-chips" id="filter-chips"></div>
+            <div class="alert error" id="error-box" role="alert"></div>
+
+            <div class="kpi-grid">
+              <div class="kpi-card">
+                <span>Total Pengaduan</span>
+                <strong id="kpi-total">0</strong>
+                <small>Semua data tersimpan</small>
+              </div>
+              <div class="kpi-card danger">
+                <span>Sangat Urgen</span>
+                <strong id="kpi-sangat">0</strong>
+                <small>Butuh tindak lanjut cepat</small>
+              </div>
+              <div class="kpi-card warning">
+                <span>Urgen</span>
+                <strong id="kpi-urgen">0</strong>
+                <small>Prioritas penanganan</small>
+              </div>
+              <div class="kpi-card success">
+                <span>Prioritas Rendah</span>
+                <strong id="kpi-rendah">0</strong>
+                <small>Biasa dan tidak urgen</small>
+              </div>
+              <div class="kpi-card info">
+                <span>Kategori Aktif</span>
+                <strong id="kpi-kategori">0</strong>
+                <small>Dapat dipakai admin</small>
+              </div>
+              <div class="kpi-card neutral">
+                <span>Dataset Training</span>
+                <strong id="kpi-dataset">0</strong>
+                <small>Baris valid terakhir</small>
+              </div>
+            </div>
+
+            <div class="analytics-grid">
+              <article class="card">
+                <header class="card-header">
+                  <div>
+                    <span class="eyebrow">Tren</span>
+                    <h2 class="card-title">Tren Pengaduan</h2>
+                    <p class="card-lede">Perbandingan total dan laporan urgen.</p>
+                  </div>
+                  <div class="segment-control" role="group" aria-label="Mode tren">
+                    <button class="seg-btn active" id="btn-harian" type="button">Harian</button>
+                    <button class="seg-btn" id="btn-mingguan" type="button">Mingguan</button>
+                  </div>
+                </header>
+                <div class="chart-box" id="trend-chart"></div>
+                <div class="legend">
+                  <span><i class="line-total-key"></i>Total pengaduan</span>
+                  <span><i class="line-urgent-key"></i>Urgen dan sangat urgen</span>
+                </div>
+              </article>
+
+              <article class="card">
+                <header class="card-header">
+                  <div>
+                    <span class="eyebrow">Analitik</span>
+                    <h2 class="card-title">Distribusi Urgensi</h2>
+                    <p class="card-lede">Proporsi laporan berdasarkan tingkat kedaruratan.</p>
+                  </div>
+                </header>
+                <div class="bar-list" id="urgency-bars"></div>
+              </article>
+
+              <article class="card wide">
+                <header class="card-header">
+                  <div>
+                    <span class="eyebrow">Analitik</span>
+                    <h2 class="card-title">Distribusi Kategori</h2>
+                    <p class="card-lede">Kategori paling banyak dilaporkan warga.</p>
+                  </div>
+                </header>
+                <div class="bar-list" id="category-bars"></div>
+              </article>
+            </div>
+
+            <article class="card">
+              <header class="card-header">
+                <div>
+                  <span class="eyebrow">Terbaru</span>
+                  <h2 class="card-title">Pengaduan Terbaru</h2>
+                  <p class="card-lede">Enam laporan terakhir yang masuk ke sistem.</p>
+                </div>
+                <a class="btn btn-secondary btn-small" href="#data" data-nav-trigger="data">Lihat Semua</a>
+              </header>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Teks Pengaduan</th>
+                      <th>Kategori</th>
+                      <th>Instansi</th>
+                      <th>Urgensi</th>
+                      <th>Waktu Masuk</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dashboard-recent-body"></tbody>
+                </table>
+              </div>
+            </article>
+          </section>
+          <section class="app-section" data-section="data">
+            <div class="page-intro">
+              <div>
+                <span class="eyebrow">Arsip</span>
+                <h1>Data Pengaduan Tersimpan</h1>
+                <p>Telusuri, saring, dan ekspor semua laporan yang pernah masuk ke sistem.</p>
+              </div>
+              <div class="row-end">
+                <div class="export-tools" role="group" aria-label="Unduh data">
+                  <label class="sr-only" for="data-export-format">Pilih Format</label>
+                  <select id="data-export-format" class="select export-format" aria-label="Pilih Format">
+                    <option value="csv">CSV</option>
+                    <option value="pdf">PDF</option>
+                  </select>
+                  <button class="btn" type="button" data-export>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12" /><path d="m7 10 5 5 5-5" /><path d="M5 21h14" /></svg>
+                    Unduh Data
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="filter-bar" aria-label="Filter data pengaduan">
+              <label>
+                Tanggal Awal
+                <input class="input" type="date" data-filter="date_from" />
+              </label>
+              <label>
+                Tanggal Akhir
+                <input class="input" type="date" data-filter="date_to" />
+              </label>
+              <label>
+                Kategori
+                <select class="select js-category-filter" data-filter="kategori">
+                  <option value="">Semua kategori</option>
+                </select>
+              </label>
+              <label>
+                Urgensi
+                <select class="select" data-filter="urgensi">
+                  <option value="">Semua urgensi</option>
+                  <option value="sangat_urgen">Sangat Urgen</option>
+                  <option value="urgen">Urgen</option>
+                  <option value="biasa">Biasa</option>
+                  <option value="tidak_urgen">Tidak Urgen</option>
+                </select>
+              </label>
+              <label>
+                Instansi
+                <select class="select js-agency-filter" data-filter="instansi">
+                  <option value="">Semua instansi</option>
+                </select>
+              </label>
+              <label>
+                Kata Kunci
+                <input class="input" type="search" placeholder="Cari teks, kategori, atau instansi..." data-filter="q" />
+              </label>
+              <div class="filter-actions">
+                <button class="btn btn-secondary filter-apply" type="button">Terapkan</button>
+                <button class="btn btn-ghost filter-reset" type="button">Reset</button>
+              </div>
+            </div>
+
+            <article class="card">
+              <header class="card-header">
+                <div>
+                  <span class="eyebrow">Tabel</span>
+                  <h2 class="card-title">Data Pengaduan</h2>
+                  <p class="muted-note" id="table-count">Memuat data...</p>
+                </div>
+              </header>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Teks Pengaduan</th>
+                      <th>Kategori</th>
+                      <th>Instansi</th>
+                      <th>Urgensi</th>
+                      <th>Kepercayaan Kategori</th>
+                      <th>Kepercayaan Urgensi</th>
+                      <th>Waktu Masuk</th>
+                      <th>Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="table-body"></tbody>
+                </table>
+              </div>
+              <div class="pagination">
+                <span id="page-info">-</span>
+                <div class="page-actions">
+                  <button class="btn btn-secondary btn-small" id="prev-page" type="button">Sebelumnya</button>
+                  <button class="btn btn-secondary btn-small" id="next-page" type="button">Berikutnya</button>
+                </div>
+              </div>
+            </article>
+          </section>
+          <section class="app-section" data-section="kategori">
+            <div class="page-intro">
+              <div>
+                <span class="eyebrow">Master Data</span>
+                <h1>Kelola Kategori &amp; Instansi</h1>
+                <p>Admin dapat menambah, menyunting, dan menonaktifkan kategori pengaduan beserta instansi penanggung jawabnya.</p>
+              </div>
+              <div class="row-end">
+                <button class="btn btn-primary" id="category-add" type="button">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+                  Tambah Kategori
+                </button>
+              </div>
+            </div>
+
+            <article class="card">
+              <header class="card-header">
+                <div>
+                  <span class="eyebrow">Daftar Kategori</span>
+                  <h2 class="card-title">Kategori Aktif</h2>
+                  <p class="muted-note" id="category-count">Memuat kategori...</p>
+                </div>
+              </header>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Nama Kategori</th>
+                      <th>Instansi Terkait</th>
+                      <th>Jumlah Pengaduan</th>
+                      <th>Status</th>
+                      <th>Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="category-table-body"></tbody>
+                </table>
+              </div>
+            </article>
+          </section>
+          <section class="app-section" data-section="training">
+            <div class="page-intro">
+              <div>
+                <span class="eyebrow">Model Lifecycle</span>
+                <h1>Dataset &amp; Pipeline Training</h1>
+                <p>Unggah dataset CSV baru, validasi struktur kolom, lalu siapkan proses fine-tuning untuk model IndoBERT.</p>
+              </div>
+            </div>
+
+            <div class="training-layout">
+              <article class="card">
+                <header class="card-header">
+                  <div>
+                    <span class="eyebrow">Unggah</span>
+                    <h2 class="card-title">Unggah Dataset</h2>
+                    <p class="card-lede">Format CSV dengan kolom <code>teks</code>, <code>kategori</code>, dan <code>urgensi</code>.</p>
+                  </div>
+                </header>
+
+                <div class="upload-zone" id="drop-zone">
+                  <input id="dataset-file" type="file" accept=".csv,text/csv" hidden />
+                  <strong>Seret berkas CSV kemari</strong>
+                  <span>Atau klik tombol di bawah untuk memilih dari perangkat.</span>
+                  <button class="btn btn-secondary" id="choose-file-btn" type="button">Pilih File CSV</button>
+                </div>
+                <p class="muted-note" id="selected-file">Belum ada file dipilih.</p>
+
+                <div class="column-guide">
+                  <span>Kolom wajib:</span>
+                  <code>teks</code>
+                  <code>kategori</code>
+                  <code>urgensi</code>
+                </div>
+
+                <div class="row-end" style="margin-top:14px">
+                  <button class="btn btn-secondary" id="upload-dataset-btn" type="button" disabled>Validasi CSV</button>
+                  <button class="btn btn-primary" id="start-training-btn" type="button" disabled>Mulai Training</button>
+                </div>
+                <div class="alert" id="dataset-message"></div>
+              </article>
+
+              <article class="card">
+                <header class="card-header">
+                  <div>
+                    <span class="eyebrow">Status</span>
+                    <h2 class="card-title">Status Training</h2>
+                    <p class="card-lede">Pantau kemajuan proses dan riwayat validasi dataset.</p>
+                  </div>
+                </header>
+                <div class="training-status">
+                  <span id="training-status-text">Belum ada proses training berjalan.</span>
+                  <div class="progress-track">
+                    <span id="training-progress"></span>
+                  </div>
+                </div>
+                <div class="history-list compact-list" id="training-history"></div>
+              </article>
+            </div>
+
+            <article class="card">
+              <header class="card-header">
+                <div>
+                  <span class="eyebrow">Pratinjau</span>
+                  <h2 class="card-title">Pratinjau Dataset</h2>
+                  <p class="card-lede">Sepuluh baris pertama dari dataset yang baru diunggah.</p>
+                </div>
+              </header>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Teks</th>
+                      <th>Kategori</th>
+                      <th>Urgensi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dataset-preview"></tbody>
+                </table>
+              </div>
+              <div class="invalid-list" id="invalid-row-list"></div>
+            </article>
+          </section>
+          <section class="app-section" data-section="pengaturan">
+            <div class="page-intro">
+              <div>
+                <span class="eyebrow">Konfigurasi</span>
+                <h1>Pengaturan Sistem</h1>
+                <p>Referensi endpoint backend dan preferensi tampilan panel admin.</p>
+              </div>
+            </div>
+
+            <div class="settings-grid">
+              <article class="card">
+                <header class="card-header">
+                  <div>
+                    <span class="eyebrow">Tampilan</span>
+                    <h2 class="card-title">Preferensi Tema</h2>
+                    <p class="card-lede">Tema tersimpan di browser ini dan berlaku untuk seluruh halaman SiPadu.</p>
+                  </div>
+                </header>
+                <button class="theme-toggle" data-theme-toggle type="button" aria-label="Ganti tema" aria-pressed="false">
+                  <span class="theme-toggle-track"><span class="theme-toggle-thumb"></span></span>
+                  <span data-theme-label>Terang</span>
+                </button>
+              </article>
+
+              <article class="card">
+                <header class="card-header">
+                  <div>
+                    <span class="eyebrow">Integrasi</span>
+                    <h2 class="card-title">Koneksi Backend</h2>
+                    <p class="card-lede">Endpoint Flask yang dipakai antarmuka ini.</p>
+                  </div>
+                </header>
+                <dl class="definition-grid single">
+                  <div>
+                    <dt>Endpoint Prediksi</dt>
+                    <dd>/api/predict</dd>
+                  </div>
+                  <div>
+                    <dt>Endpoint Statistik</dt>
+                    <dd>/api/stats</dd>
+                  </div>
+                  <div>
+                    <dt>Endpoint Riwayat</dt>
+                    <dd>/api/riwayat</dd>
+                  </div>
+                  <div>
+                    <dt>Endpoint Kategori</dt>
+                    <dd>/api/categories</dd>
+                  </div>
+                  <div>
+                    <dt>Endpoint Ekspor</dt>
+                    <dd>/api/export?format=csv|pdf</dd>
+                  </div>
+                  <div>
+                    <dt>Endpoint Dataset</dt>
+                    <dd>/api/dataset/upload</dd>
+                  </div>
+                </dl>
+              </article>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <aside class="detail-drawer" id="detail-drawer" aria-hidden="true">
+      <div class="drawer-panel">
+        <div class="card-header">
+          <div>
+            <span class="eyebrow">Detail</span>
+            <h2 class="card-title">Detail Pengaduan</h2>
+          </div>
+          <button class="btn btn-ghost btn-small" id="detail-close" type="button">Tutup</button>
+        </div>
+        <div class="drawer-body" id="detail-content"></div>
+      </div>
+    </aside>
+
+    <div class="modal" id="category-modal" aria-hidden="true">
+      <form class="modal-panel" id="category-form">
+        <div class="card-header">
+          <div>
+            <span class="eyebrow">Kategori</span>
+            <h2 class="card-title" id="category-modal-title">Tambah Kategori</h2>
+          </div>
+          <button class="btn btn-ghost btn-small" type="button" data-close-category aria-label="Tutup">X</button>
+        </div>
+        <input type="hidden" id="category-id" />
+        <label>
+          Nama Kategori
+          <input class="input" id="category-name" required minlength="2" placeholder="misal: Transportasi" />
+        </label>
+        <label>
+          Instansi Terkait
+          <input class="input" id="category-agency" required minlength="2" placeholder="misal: Dinas Perhubungan" />
+        </label>
+        <label class="check-row">
+          <input id="category-active" type="checkbox" checked />
+          <span>Aktif untuk prediksi baru</span>
+        </label>
+        <div class="row-end">
+          <button class="btn btn-ghost" type="button" data-close-category>Batalkan</button>
+          <button class="btn btn-primary" type="submit">Simpan</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="modal" id="confirm-modal" aria-hidden="true">
+      <div class="modal-panel small">
+        <div class="card-header">
+          <div>
+            <span class="eyebrow">Konfirmasi</span>
+            <h2 class="card-title" id="confirm-title">Konfirmasi Aksi</h2>
           </div>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Teks Pengaduan</th>
-                <th>Kategori</th>
-                <th>Instansi</th>
-                <th>Urgensi</th>
-                <th>Conf. Kat</th>
-                <th>Conf. Urg</th>
-                <th>Waktu</th>
-              </tr>
-            </thead>
-            <tbody id="table-body">
-              <tr>
-                <td colspan="8">
-                  <div class="empty-state">
-                    <div
-                      class="skeleton"
-                      style="height: 14px; margin: 0 auto; max-width: 200px"
-                    ></div>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="pagination">
-          <span id="page-info">—</span>
-          <div class="page-btns" id="page-btns"></div>
+        <p id="confirm-body" class="confirm-copy"></p>
+        <div class="row-end">
+          <button class="btn btn-ghost" id="confirm-cancel" type="button">Batalkan</button>
+          <button class="btn btn-danger" id="confirm-ok" type="button">Lanjutkan</button>
         </div>
       </div>
     </div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-    <script>
-      // ── STATE ────────────────────────────────────────────────
-      let statsData = null;
-      let trenMode = "harian";
-      let chartKat = null;
-      let chartTren = null;
-      let currentPage = 1;
-      let totalItems = 0;
-      const PAGE_LIMIT = 20;
-      let searchTimer = null;
-
-      // ── CHART DEFAULTS ────────────────────────────────────────
-      const CHART_DEFAULTS = {
-        color: "#e8eaf0",
-        plugins: {
-          legend: {
-            labels: { color: "#6b7280", font: { family: "'Sora'", size: 11 } },
-          },
-        },
-      };
-      Chart.defaults.color = "#6b7280";
-      Chart.defaults.borderColor = "rgba(255,255,255,0.06)";
-      Chart.defaults.font.family = "'Sora'";
-
-      // ── LOAD STATS ────────────────────────────────────────────
-      async function loadStats() {
-        try {
-          const r = await fetch("/api/stats");
-          if (!r.ok) throw new Error(await r.text());
-          statsData = await r.json();
-          renderKPI();
-          renderKatChart();
-          renderUrgBars();
-          renderTrenChart();
-        } catch (e) {
-          console.error("Stats error:", e);
-        }
-      }
-
-      function renderKPI() {
-        const d = statsData;
-        document.getElementById("kpi-total").textContent = d.total ?? 0;
-
-        const urgMap = {};
-        (d.urgensi || []).forEach((u) => (urgMap[u.urgensi] = u.total));
-        document.getElementById("kpi-su").textContent =
-          urgMap["sangat_urgen"] ?? 0;
-        document.getElementById("kpi-u").textContent = urgMap["urgen"] ?? 0;
-        document.getElementById("kpi-b").textContent =
-          (urgMap["biasa"] ?? 0) + (urgMap["tidak_urgen"] ?? 0);
-      }
-
-      function renderKatChart() {
-        const cats = statsData.kategori || [];
-        const labels = cats.map((c) => c.kategori);
-        const vals = cats.map((c) => c.total);
-        const colors = ["#3b82f6", "#8b5cf6", "#06b6d4", "#f59e0b", "#22c55e"];
-
-        if (chartKat) chartKat.destroy();
-        chartKat = new Chart(document.getElementById("chart-kat"), {
-          type: "doughnut",
-          data: {
-            labels,
-            datasets: [
-              {
-                data: vals,
-                backgroundColor: colors.map((c) => c + "cc"),
-                borderColor: colors,
-                borderWidth: 1.5,
-                hoverOffset: 6,
-              },
-            ],
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            cutout: "65%",
-            plugins: {
-              legend: {
-                position: "right",
-                labels: {
-                  color: "#9ca3af",
-                  font: { size: 11 },
-                  padding: 14,
-                  boxWidth: 10,
-                },
-              },
-              tooltip: {
-                callbacks: {
-                  label: (ctx) => ` ${ctx.label}: ${ctx.raw} pengaduan`,
-                },
-              },
-            },
-          },
-        });
-      }
-
-      function renderUrgBars() {
-        const urgs = statsData.urgensi || [];
-        const total = urgs.reduce((s, u) => s + u.total, 0) || 1;
-        const ORDER = ["sangat_urgen", "urgen", "biasa", "tidak_urgen"];
-        const sorted = ORDER.map((k) =>
-          urgs.find((u) => u.urgensi === k),
-        ).filter(Boolean);
-
-        document.getElementById("urg-bars").innerHTML = sorted
-          .map((u) => {
-            const pct = Math.round((u.total / total) * 100);
-            return `
-      <div class="urg-row">
-        <span class="urg-icon">${u.urgensi_icon}</span>
-        <span class="urg-name">${u.urgensi_display}</span>
-        <div class="urg-bar-bg">
-          <div class="urg-bar-fill ${u.urgensi_color}" data-w="${pct}"></div>
-        </div>
-        <span class="urg-count">${u.total}</span>
-      </div>`;
-          })
-          .join("");
-
-        requestAnimationFrame(() => {
-          document.querySelectorAll(".urg-bar-fill").forEach((b) => {
-            requestAnimationFrame(() => (b.style.width = b.dataset.w + "%"));
-          });
-        });
-      }
-
-      function switchTren(mode) {
-        trenMode = mode;
-        document.getElementById("btn-harian").style.borderColor =
-          mode === "harian" ? "var(--accent)" : "";
-        document.getElementById("btn-harian").style.color =
-          mode === "harian" ? "var(--accent2)" : "";
-        document.getElementById("btn-mingguan").style.borderColor =
-          mode === "mingguan" ? "var(--accent)" : "";
-        document.getElementById("btn-mingguan").style.color =
-          mode === "mingguan" ? "var(--accent2)" : "";
-        renderTrenChart();
-      }
-
-      function renderTrenChart() {
-        if (!statsData) return;   // ← tambah ini
-        const rows = statsData[trenMode] || [];
-        const labels = rows.map((r) => r.tanggal || r.mulai);
-        const total = rows.map((r) => r.total);
-        const urgen = rows.map((r) => r.urgen_count);
-
-        if (chartTren) chartTren.destroy();
-        chartTren = new Chart(document.getElementById("chart-tren"), {
-          type: "line",
-          data: {
-            labels,
-            datasets: [
-              {
-                label: "Total Pengaduan",
-                data: total,
-                borderColor: "#3b82f6",
-                backgroundColor: "rgba(59,130,246,0.08)",
-                borderWidth: 2,
-                pointRadius: 3,
-                pointBackgroundColor: "#3b82f6",
-                fill: true,
-                tension: 0.35,
-              },
-              {
-                label: "Urgen/Sangat Urgen",
-                data: urgen,
-                borderColor: "#ef4444",
-                backgroundColor: "rgba(239,68,68,0.05)",
-                borderWidth: 2,
-                pointRadius: 3,
-                pointBackgroundColor: "#ef4444",
-                fill: true,
-                tension: 0.35,
-              },
-            ],
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: {
-                labels: { color: "#9ca3af", font: { size: 11 }, boxWidth: 12 },
-              },
-              tooltip: { mode: "index", intersect: false },
-            },
-            scales: {
-              x: {
-                grid: { color: "rgba(255,255,255,0.04)" },
-                ticks: {
-                  color: "#6b7280",
-                  font: { size: 10 },
-                  maxTicksLimit: 10,
-                },
-              },
-              y: {
-                grid: { color: "rgba(255,255,255,0.04)" },
-                ticks: { color: "#6b7280", font: { size: 10 }, stepSize: 1 },
-                beginAtZero: true,
-              },
-            },
-          },
-        });
-      }
-
-      // ── LOAD RIWAYAT ──────────────────────────────────────────
-      let searchQuery = "";
-
-      function onSearch() {
-        clearTimeout(searchTimer);
-        searchTimer = setTimeout(() => {
-          searchQuery = document
-            .getElementById("search-input")
-            .value.toLowerCase();
-          loadRiwayat(1);
-        }, 400);
-      }
-
-      async function loadRiwayat(page) {
-        currentPage = page;
-        const tbody = document.getElementById("table-body");
-        tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="skeleton" style="height:14px;margin:0 auto;max-width:200px"></div></div></td></tr>`;
-
-        try {
-          const r = await fetch(
-            `/api/riwayat?page=${page}&limit=${PAGE_LIMIT}`,
-          );
-          if (!r.ok) throw new Error();
-          const d = await r.json();
-
-          totalItems = d.total;
-          let rows = d.data;
-
-          // Client-side search filter
-          if (searchQuery) {
-            rows = rows.filter(
-              (row) =>
-                (row.teks || "").toLowerCase().includes(searchQuery) ||
-                (row.kategori || "").toLowerCase().includes(searchQuery) ||
-                (row.urgensi || "").toLowerCase().includes(searchQuery),
-            );
-          }
-
-          document.getElementById("table-count").textContent =
-            `${totalItems} pengaduan tersimpan`;
-          document.getElementById("page-info").textContent =
-            `Halaman ${page} dari ${Math.ceil(totalItems / PAGE_LIMIT)}`;
-
-          if (rows.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📭</div>Belum ada data pengaduan.</div></td></tr>`;
-          } else {
-            tbody.innerHTML = rows
-              .map(
-                (row) => `
-        <tr>
-          <td style="font-family:var(--mono);font-size:11px;color:var(--muted)">${row.id}</td>
-          <td class="td-teks" title="${escHtml(row.teks)}">${escHtml(row.teks)}</td>
-          <td><span class="badge-kat">${row.kategori || "-"}</span></td>
-          <td style="font-size:12px;color:var(--muted);max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${row.instansi || "-"}</td>
-          <td><span class="badge-urg ${row.urgensi_color}">${row.urgensi_icon} ${row.urgensi_display}</span></td>
-          <td>
-            <div class="conf-bar"><div class="conf-fill" style="width:${row.kat_confidence}%"></div></div>
-            <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">${row.kat_confidence}%</span>
-          </td>
-          <td>
-            <div class="conf-bar"><div class="conf-fill" style="width:${row.urg_confidence}%"></div></div>
-            <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">${row.urg_confidence}%</span>
-          </td>
-          <td style="font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap">${row.created_at}</td>
-        </tr>
-      `,
-              )
-              .join("");
-          }
-
-          renderPagination(page, totalItems);
-        } catch (e) {
-          tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state">Gagal memuat data. Pastikan database tersambung.</div></td></tr>`;
-        }
-      }
-
-      function renderPagination(page, total) {
-        const totalPages = Math.ceil(total / PAGE_LIMIT);
-        const container = document.getElementById("page-btns");
-        if (totalPages <= 1) {
-          container.innerHTML = "";
-          return;
-        }
-
-        let btns = "";
-        btns += `<button class="page-btn" onclick="loadRiwayat(${page - 1})" ${page <= 1 ? "disabled" : ""}>‹</button>`;
-
-        for (
-          let p = Math.max(1, page - 2);
-          p <= Math.min(totalPages, page + 2);
-          p++
-        ) {
-          btns += `<button class="page-btn ${p === page ? "active" : ""}" onclick="loadRiwayat(${p})">${p}</button>`;
-        }
-
-        btns += `<button class="page-btn" onclick="loadRiwayat(${page + 1})" ${page >= totalPages ? "disabled" : ""}>›</button>`;
-        container.innerHTML = btns;
-      }
-
-      function escHtml(s) {
-        return (s || "")
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;");
-      }
-
-      // ── INIT ──────────────────────────────────────────────────
-      loadStats();
-      loadRiwayat(1);
-
-      // Auto-refresh stats every 30s
-      setInterval(() => {
-        loadStats();
-        loadRiwayat(currentPage);
-      }, 30000);
-    </script>
+    <script defer src="/static/dashboard.js"></script>
   </body>
 </html>

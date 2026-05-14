@@ -13,6 +13,12 @@ import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import json
 import os
+import re
+import sys
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 # ── KONFIGURASI ──────────────────────────────────────────────
 FILE_INPUT        = "data_mentah_test_1.csv"
@@ -37,6 +43,17 @@ EMOJI_MAP = {
     "biasa"        : "🟢 BIASA",
     "tidak_urgen"  : "⚪ TIDAK URGEN",
 }
+
+SECURITY_TERMS = (
+    "begal", "dibegal", "jambret", "dijambret", "curanmor", "pencurian",
+    "maling", "kemalingan", "perampokan", "perampok", "rampok", "dirampok",
+    "pembunuhan", "dibunuh", "bunuh", "penyerangan", "diserang", "senjata",
+)
+
+HIGH_URGENCY_SECURITY_TERMS = (
+    "dibegal", "begal", "perampokan", "perampok", "rampok", "dirampok",
+    "pembunuhan", "dibunuh", "bunuh", "senjata", "penyerangan", "diserang",
+)
 # ─────────────────────────────────────────────────────────────
 
 
@@ -53,13 +70,38 @@ def load_model(folder, label_list):
     model     = AutoModelForSequenceClassification.from_pretrained(folder)
     model.eval()
 
-    # Buat id2label dari label_list yang diurutkan sama persis seperti waktu training
-    # LabelEncoder sklearn mengurutkan label secara alphabetical
-    sorted_labels = sorted(label_list)
-    id2label = {i: label for i, label in enumerate(sorted_labels)}
+    config_labels = getattr(model.config, "id2label", {}) or {}
+    has_real_labels = all(not str(label).startswith("LABEL_") for label in config_labels.values())
+    if config_labels and has_real_labels:
+        id2label = {int(i): label for i, label in config_labels.items()}
+    else:
+        # Fallback untuk model lama yang belum menyimpan mapping label.
+        sorted_labels = sorted(label_list)
+        id2label = {i: label for i, label in enumerate(sorted_labels)}
     print(f"  Label mapping: {id2label}")
 
     return tokenizer, model, id2label
+
+
+def contains_term(text, terms):
+    normalized = str(text).lower()
+    return any(re.search(rf"\b{re.escape(term)}\b", normalized) for term in terms)
+
+
+def apply_domain_guards(texts, pred_kategori, pred_urgensi):
+    guarded_kategori = []
+    guarded_urgensi = []
+
+    for text, kategori, urgensi in zip(texts, pred_kategori, pred_urgensi):
+        if contains_term(text, SECURITY_TERMS):
+            kategori = "keamanan"
+        if contains_term(text, HIGH_URGENCY_SECURITY_TERMS) and urgensi in {"biasa", "tidak_urgen"}:
+            urgensi = "urgen"
+
+        guarded_kategori.append(kategori)
+        guarded_urgensi.append(urgensi)
+
+    return guarded_kategori, guarded_urgensi
 
 
 def prediksi_batch(texts, tokenizer, model, id2label):
@@ -143,6 +185,7 @@ def main():
     # 4. Prediksi urgensi
     print("\n[4/4] Memprediksi tingkat urgensi...")
     pred_urgensi = prediksi_batch(texts, tok_urg, mdl_urg, id2label_urg)
+    pred_kategori, pred_urgensi = apply_domain_guards(texts, pred_kategori, pred_urgensi)
 
     # 5. Gabungkan hasil
     df["kategori"] = pred_kategori

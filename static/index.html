@@ -1,859 +1,513 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>SiPadu — Sistem Klasifikasi Pengaduan</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
-<style>
-/* ── RESET & BASE ─────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<!doctype html>
+<html lang="id" data-page="analisis">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SiPadu - Analisis Pengaduan</title>
+    <script>
+      (() => {
+        const saved = localStorage.getItem("sipadu_theme");
+        document.documentElement.dataset.theme = saved === "dark" ? "dark" : "light";
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/styles.css" />
+    <script defer src="/static/theme.js"></script>
+  </head>
+  <body>
+    <div class="app-shell" data-sidebar="expanded" data-mobile-open="false">
+      <div class="sidebar-backdrop" data-sidebar-close></div>
+      <aside class="sidebar" aria-label="Navigasi utama">
+        <a class="brand" href="/" aria-label="Beranda SiPadu">
+          <span class="brand-mark" aria-hidden="true">Sp</span>
+          <span class="brand-text">
+            <span class="brand-title">SiPadu</span>
+            <span class="brand-sub">Pengaduan Cerdas</span>
+          </span>
+        </a>
 
-:root {
-  --bg:        #0a0c10;
-  --surface:   #111318;
-  --surface2:  #181c24;
-  --border:    rgba(255,255,255,0.07);
-  --border2:   rgba(255,255,255,0.12);
-  --text:      #e8eaf0;
-  --muted:     #6b7280;
-  --accent:    #3b82f6;
-  --accent2:   #60a5fa;
-  --red:       #ef4444;
-  --yellow:    #f59e0b;
-  --green:     #22c55e;
-  --gray-c:    #6b7280;
-  --radius:    14px;
-  --font:      'Sora', sans-serif;
-  --mono:      'JetBrains Mono', monospace;
-}
+        <nav class="nav-group" aria-label="Analisis">
+          <span class="nav-group-label">Analisis</span>
+          <a class="side-link active" href="/">
+            <svg class="side-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3 4 7v6c0 4 3.4 7.6 8 8 4.6-.4 8-4 8-8V7Z" />
+              <path d="m9 12 2 2 4-4" />
+            </svg>
+            <span class="side-link-label">Beranda Analisis</span>
+          </a>
+        </nav>
 
-html { scroll-behavior: smooth; }
+        <nav class="nav-group" aria-label="Operasi">
+          <span class="nav-group-label">Operasi</span>
+          <a class="side-link" href="/dashboard#dashboard">
+            <svg class="side-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3" y="3" width="7" height="8" rx="1.5" />
+              <rect x="14" y="3" width="7" height="5" rx="1.5" />
+              <rect x="14" y="11" width="7" height="10" rx="1.5" />
+              <rect x="3" y="14" width="7" height="7" rx="1.5" />
+            </svg>
+            <span class="side-link-label">Dashboard Admin</span>
+          </a>
+          <a class="side-link" href="/dashboard#data">
+            <svg class="side-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <ellipse cx="12" cy="5" rx="8" ry="3" />
+              <path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5" />
+              <path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6" />
+            </svg>
+            <span class="side-link-label">Data Pengaduan</span>
+          </a>
+          <a class="side-link" href="/dashboard#kategori">
+            <svg class="side-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" />
+            </svg>
+            <span class="side-link-label">Kelola Kategori</span>
+          </a>
+          <a class="side-link" href="/dashboard#training">
+            <svg class="side-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3v12" />
+              <path d="m7 10 5 5 5-5" />
+              <path d="M5 21h14" />
+            </svg>
+            <span class="side-link-label">Dataset &amp; Training</span>
+          </a>
+        </nav>
 
-body {
-  font-family: var(--font);
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  overflow-x: hidden;
-}
+        <nav class="nav-group" aria-label="Sistem">
+          <span class="nav-group-label">Sistem</span>
+          <a class="side-link" href="/dashboard#pengaturan">
+            <svg class="side-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" />
+            </svg>
+            <span class="side-link-label">Pengaturan</span>
+          </a>
+        </nav>
 
-/* ── GRID NOISE BACKGROUND ─────────────────────────────── */
-body::before {
-  content: '';
-  position: fixed; inset: 0;
-  background-image:
-    linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px);
-  background-size: 40px 40px;
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* ── GLOW ORBS ─────────────────────────────────────────── */
-.orb {
-  position: fixed;
-  border-radius: 50%;
-  filter: blur(120px);
-  pointer-events: none;
-  z-index: 0;
-}
-.orb-1 {
-  width: 500px; height: 500px;
-  background: radial-gradient(circle, rgba(59,130,246,0.12), transparent 70%);
-  top: -100px; left: -100px;
-}
-.orb-2 {
-  width: 400px; height: 400px;
-  background: radial-gradient(circle, rgba(139,92,246,0.08), transparent 70%);
-  bottom: -80px; right: -80px;
-}
-
-/* ── LAYOUT ────────────────────────────────────────────── */
-.wrap {
-  position: relative; z-index: 1;
-  max-width: 860px;
-  margin: 0 auto;
-  padding: 40px 24px 80px;
-}
-
-/* ── HEADER ────────────────────────────────────────────── */
-header {
-  text-align: center;
-  margin-bottom: 48px;
-  animation: fadeDown 0.6s ease both;
-}
-
-.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(59,130,246,0.1);
-  border: 1px solid rgba(59,130,246,0.25);
-  color: var(--accent2);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  padding: 5px 14px;
-  border-radius: 100px;
-  margin-bottom: 20px;
-}
-.badge-dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--accent);
-  animation: pulse 2s ease infinite;
-}
-
-h1 {
-  font-size: clamp(2rem, 5vw, 3rem);
-  font-weight: 700;
-  line-height: 1.15;
-  letter-spacing: -0.02em;
-  margin-bottom: 12px;
-}
-h1 span { color: var(--accent2); }
-
-.subtitle {
-  color: var(--muted);
-  font-size: 15px;
-  font-weight: 300;
-  max-width: 500px;
-  margin: 0 auto;
-  line-height: 1.6;
-}
-
-/* ── STATUS BAR ────────────────────────────────────────── */
-#status-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  justify-content: center;
-  margin-bottom: 36px;
-  font-size: 12px;
-  font-family: var(--mono);
-  color: var(--muted);
-  animation: fadeIn 0.8s 0.3s ease both;
-}
-.status-dot {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: var(--gray-c);
-  transition: background 0.4s;
-}
-.status-dot.ok   { background: var(--green); box-shadow: 0 0 8px var(--green); }
-.status-dot.err  { background: var(--red); }
-.status-dot.load { background: var(--yellow); animation: pulse 1s ease infinite; }
-
-/* ── INPUT CARD ────────────────────────────────────────── */
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 28px;
-  margin-bottom: 20px;
-  animation: fadeUp 0.6s 0.15s ease both;
-  transition: border-color 0.3s;
-}
-.card:focus-within {
-  border-color: rgba(59,130,246,0.3);
-}
-
-.card-label {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 14px;
-}
-
-textarea {
-  width: 100%;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  color: var(--text);
-  font-family: var(--font);
-  font-size: 15px;
-  font-weight: 400;
-  line-height: 1.7;
-  padding: 16px 18px;
-  resize: vertical;
-  min-height: 130px;
-  outline: none;
-  transition: border-color 0.2s;
-}
-textarea::placeholder { color: var(--muted); }
-textarea:focus { border-color: rgba(59,130,246,0.4); }
-
-.input-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 14px;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-#char-count {
-  font-family: var(--mono);
-  font-size: 12px;
-  color: var(--muted);
-}
-
-/* ── EXAMPLES ──────────────────────────────────────────── */
-.examples {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.ex-btn {
-  font-size: 11px;
-  font-family: var(--font);
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 100px;
-  color: var(--muted);
-  padding: 5px 12px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.ex-btn:hover {
-  border-color: var(--border2);
-  color: var(--text);
-}
-
-/* ── BUTTON ────────────────────────────────────────────── */
-.btn-primary {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--accent);
-  color: #fff;
-  font-family: var(--font);
-  font-size: 14px;
-  font-weight: 600;
-  border: none;
-  border-radius: 10px;
-  padding: 12px 28px;
-  cursor: pointer;
-  transition: all 0.2s;
-  letter-spacing: 0.01em;
-  flex-shrink: 0;
-}
-.btn-primary:hover:not(:disabled) {
-  background: var(--accent2);
-  transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgba(59,130,246,0.3);
-}
-.btn-primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
-.btn-icon { font-size: 16px; }
-
-/* ── LOADING ───────────────────────────────────────────── */
-.spinner {
-  width: 16px; height: 16px;
-  border: 2px solid rgba(255,255,255,0.3);
-  border-top-color: #fff;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-  display: none;
-}
-
-/* ── RESULT CARD ───────────────────────────────────────── */
-#result-section {
-  display: none;
-  animation: fadeUp 0.5s ease both;
-}
-
-.result-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-.result-title {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-.result-time {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--muted);
-}
-
-/* Urgensi badge big */
-.urgensi-hero {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 20px 24px;
-  border-radius: 12px;
-  margin-bottom: 16px;
-  border: 1px solid transparent;
-  position: relative;
-  overflow: hidden;
-}
-.urgensi-hero::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  opacity: 0.06;
-}
-.urgensi-hero.red    { border-color: rgba(239,68,68,0.35);   background: rgba(239,68,68,0.08); }
-.urgensi-hero.red::before { background: var(--red); }
-.urgensi-hero.yellow { border-color: rgba(245,158,11,0.35);  background: rgba(245,158,11,0.08); }
-.urgensi-hero.yellow::before { background: var(--yellow); }
-.urgensi-hero.green  { border-color: rgba(34,197,94,0.35);   background: rgba(34,197,94,0.08); }
-.urgensi-hero.green::before { background: var(--green); }
-.urgensi-hero.gray   { border-color: rgba(107,114,128,0.35); background: rgba(107,114,128,0.08); }
-.urgensi-hero.gray::before { background: var(--gray-c); }
-
-.urgensi-icon { font-size: 36px; line-height: 1; }
-.urgensi-info h2 {
-  font-size: 20px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-}
-.urgensi-info p {
-  font-size: 12px;
-  color: var(--muted);
-  margin-top: 2px;
-}
-
-/* Grid detail */
-.detail-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-@media (max-width: 520px) {
-  .detail-grid { grid-template-columns: 1fr; }
-}
-
-.detail-box {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 16px 18px;
-}
-.detail-box .lbl {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 6px;
-}
-.detail-box .val {
-  font-size: 15px;
-  font-weight: 600;
-  text-transform: capitalize;
-}
-.detail-box .conf {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--muted);
-  margin-top: 4px;
-}
-
-/* Confidence bars */
-.prob-section { margin-bottom: 16px; }
-.prob-title {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 10px;
-}
-
-.prob-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 7px;
-}
-.prob-name {
-  font-size: 12px;
-  font-family: var(--mono);
-  color: var(--muted);
-  width: 110px;
-  flex-shrink: 0;
-  text-transform: capitalize;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.prob-bar-bg {
-  flex: 1;
-  height: 5px;
-  background: var(--surface2);
-  border-radius: 100px;
-  overflow: hidden;
-}
-.prob-bar-fill {
-  height: 100%;
-  border-radius: 100px;
-  background: var(--accent);
-  transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
-  width: 0%;
-}
-.prob-bar-fill.top { background: var(--accent2); }
-.prob-val {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--muted);
-  width: 38px;
-  text-align: right;
-}
-
-/* Input text preview */
-.teks-preview {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--accent);
-  border-radius: 10px;
-  padding: 14px 16px;
-  font-size: 13px;
-  line-height: 1.6;
-  color: var(--muted);
-  font-style: italic;
-}
-
-/* ── HISTORY ───────────────────────────────────────────── */
-#history-section {
-  margin-top: 40px;
-  animation: fadeIn 0.5s ease both;
-}
-.history-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-.history-title {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-.history-clear {
-  font-size: 11px;
-  color: var(--muted);
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-family: var(--font);
-  transition: color 0.2s;
-}
-.history-clear:hover { color: var(--red); }
-
-.history-list { display: flex; flex-direction: column; gap: 8px; }
-
-.history-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 12px 16px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.history-item:hover {
-  border-color: var(--border2);
-  background: var(--surface2);
-}
-.history-urg {
-  font-size: 18px;
-  flex-shrink: 0;
-}
-.history-meta {
-  flex: 1;
-  min-width: 0;
-}
-.history-teks {
-  font-size: 13px;
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-bottom: 3px;
-}
-.history-sub {
-  font-size: 11px;
-  color: var(--muted);
-  font-family: var(--mono);
-}
-.history-kat {
-  font-size: 11px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 100px;
-  padding: 3px 10px;
-  color: var(--muted);
-  flex-shrink: 0;
-  text-transform: capitalize;
-}
-
-/* ── ERROR ─────────────────────────────────────────────── */
-.error-box {
-  background: rgba(239,68,68,0.08);
-  border: 1px solid rgba(239,68,68,0.25);
-  border-radius: 10px;
-  padding: 14px 18px;
-  font-size: 13px;
-  color: #fca5a5;
-  display: none;
-  margin-bottom: 16px;
-}
-
-/* ── ANIMATIONS ────────────────────────────────────────── */
-@keyframes fadeDown {
-  from { opacity:0; transform: translateY(-20px); }
-  to   { opacity:1; transform: translateY(0); }
-}
-@keyframes fadeUp {
-  from { opacity:0; transform: translateY(16px); }
-  to   { opacity:1; transform: translateY(0); }
-}
-@keyframes fadeIn {
-  from { opacity:0; } to { opacity:1; }
-}
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.4; }
-}
-</style>
-</head>
-<body>
-
-<div class="orb orb-1"></div>
-<div class="orb orb-2"></div>
-
-<div class="wrap">
-
-  <!-- HEADER -->
-  <header>
-    <div class="badge">
-      <span class="badge-dot"></span>
-      IndoBERT · NLP Classifier
-    </div>
-    <h1>Sistem Klasifikasi<br/><span>Pengaduan Masyarakat</span></h1>
-    <p class="subtitle">Masukkan teks pengaduan — sistem akan menentukan kategori, instansi yang bertanggung jawab, dan tingkat urgensinya secara otomatis.</p>
-  </header>
-
-  <!-- STATUS -->
-  <div id="status-bar">
-    <span class="status-dot load" id="status-dot"></span>
-    <span id="status-text">Menghubungkan ke server...</span>
-  </div>
-
-  <!-- INPUT CARD -->
-  <div class="card">
-    <div class="card-label">Teks Pengaduan</div>
-
-    <textarea id="input-text" placeholder="Contoh: Jalan di depan pasar retak parah dan berlubang besar, sudah berbahaya bagi pengendara motor..." rows="5" maxlength="1000"></textarea>
-
-    <div class="input-footer">
-      <div class="examples">
-        <button class="ex-btn" onclick="fillExample(0)">🏗️ Infrastruktur</button>
-        <button class="ex-btn" onclick="fillExample(1)">🗑️ Kebersihan</button>
-        <button class="ex-btn" onclick="fillExample(2)">🚨 Keamanan</button>
-        <button class="ex-btn" onclick="fillExample(3)">🏥 Kesehatan</button>
-        <button class="ex-btn" onclick="fillExample(4)">📋 Administrasi</button>
-      </div>
-      <span id="char-count">0 / 1000</span>
-    </div>
-  </div>
-
-  <!-- ERROR -->
-  <div class="error-box" id="error-box"></div>
-
-  <!-- SUBMIT -->
-  <div style="display:flex; justify-content:flex-end; margin-bottom:28px;">
-    <button class="btn-primary" id="btn-predict" onclick="predict()">
-      <span class="btn-icon">⚡</span>
-      <span id="btn-text">Analisis Pengaduan</span>
-      <span class="spinner" id="spinner"></span>
-    </button>
-  </div>
-
-  <!-- RESULT -->
-  <div id="result-section">
-    <div class="card">
-      <div class="result-header">
-        <span class="result-title">Hasil Analisis</span>
-        <span class="result-time" id="result-time"></span>
-      </div>
-
-      <!-- Urgensi hero -->
-      <div class="urgensi-hero" id="urgensi-hero">
-        <div class="urgensi-icon" id="urgensi-icon"></div>
-        <div class="urgensi-info">
-          <h2 id="urgensi-label"></h2>
-          <p id="urgensi-conf"></p>
+        <div class="sidebar-footer">
+          <div class="sidebar-status">
+            <span class="status-dot warn" id="status-dot"></span>
+            <span id="status-text">Memeriksa server...</span>
+          </div>
         </div>
-      </div>
+      </aside>
+      <main class="content-shell">
+        <header class="topbar">
+          <button class="icon-btn menu-toggle" type="button" data-sidebar-toggle aria-label="Buka menu">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+          </button>
+          <div class="topbar-title">
+            <span class="topbar-eyebrow">Beranda Analisis</span>
+            <span class="topbar-heading">Analisis Pengaduan Masyarakat</span>
+          </div>
+          <div class="topbar-spacer"></div>
+          <div class="topbar-actions">
+            <button class="theme-toggle" data-theme-toggle type="button" aria-label="Ganti tema" aria-pressed="false">
+              <span class="theme-toggle-track"><span class="theme-toggle-thumb"></span></span>
+              <span data-theme-label>Terang</span>
+            </button>
+            <a class="btn btn-primary" href="/dashboard#dashboard">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h18M13 5l7 7-7 7" /></svg>
+              Buka Dashboard
+            </a>
+          </div>
+        </header>
 
-      <!-- Detail grid -->
-      <div class="detail-grid">
-        <div class="detail-box">
-          <div class="lbl">Kategori</div>
-          <div class="val" id="detail-kategori"></div>
-          <div class="conf" id="detail-kat-conf"></div>
+        <div class="page">
+          <section class="page-intro">
+            <div>
+              <span class="eyebrow">NLP IndoBERT - Dua Model</span>
+              <h1>Pahami pengaduan warga dalam hitungan detik.</h1>
+              <p>
+                Tulis teks pengaduan apa adanya. SiPadu mendeteksi kategori, tingkat urgensi,
+                instansi tujuan, lalu menyimpan laporan ke basis data pusat secara otomatis.
+              </p>
+            </div>
+            <div class="meta-grid" aria-label="Ringkasan sistem">
+              <div><span>Model Aktif</span><strong>2</strong></div>
+              <div><span>Kategori Awal</span><strong>5</strong></div>
+              <div><span>Level Urgensi</span><strong>4</strong></div>
+            </div>
+          </section>
+
+          <section class="page-grid">
+            <div class="col-8 stack">
+              <article class="composer">
+                <header class="composer-head">
+                  <div>
+                    <span class="eyebrow">Ruang Analisis</span>
+                    <h2>Tulis atau tempel teks pengaduan</h2>
+                    <p>Bahasa alami, pesan singkat, maupun laporan terperinci semua diterima.</p>
+                  </div>
+                  <span class="live-pill" id="live-indicator">Siap dianalisis</span>
+                </header>
+
+                <div>
+                  <label class="sr-only" for="input-text">Teks Pengaduan</label>
+                  <textarea
+                    id="input-text"
+                    maxlength="1000"
+                    placeholder="Contoh: Jalan utama berlubang besar dan membahayakan pengendara saat malam hari."
+                  ></textarea>
+                  <div class="composer-foot">
+                    <span class="hint">
+                      Tekan <span class="kbd">Ctrl</span> <span class="kbd">Enter</span> untuk langsung menganalisis
+                    </span>
+                    <span id="char-count" class="mono">0 / 1000</span>
+                  </div>
+                </div>
+
+                <div class="alert error" id="error-box" role="alert"></div>
+
+                <div class="composer-actions">
+                  <button class="btn btn-ghost" id="clear-btn" type="button">Bersihkan</button>
+                  <button class="btn btn-primary" id="predict-btn" type="button">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7" /></svg>
+                    Analisis Pengaduan
+                  </button>
+                </div>
+              </article>
+
+              <article class="card" aria-labelledby="result-title">
+                <header class="card-header">
+                  <div>
+                    <span class="eyebrow">Laporan Sistem</span>
+                    <h2 id="result-title" class="card-title">Hasil Prediksi</h2>
+                    <p class="card-lede">Ringkasan kategori, urgensi, dan rincian probabilitas model.</p>
+                  </div>
+                  <span class="live-pill" id="result-time">Menunggu analisis</span>
+                </header>
+
+                <div class="empty-state" id="empty-state">
+                  <strong>Belum ada hasil</strong>
+                  <span>Kategori, instansi, tingkat urgensi, serta probabilitas akan muncul di sini setelah pengaduan dianalisis.</span>
+                </div>
+
+                <div class="stack" id="result-section" style="display:none">
+                  <div class="result-summary">
+                    <div class="summary-block primary">
+                      <span>Kategori Terdeteksi</span>
+                      <strong id="category-label">-</strong>
+                      <small>Kepercayaan <span id="category-confidence">-</span></small>
+                    </div>
+                    <div class="summary-block agency">
+                      <span>Instansi Terkait</span>
+                      <strong id="agency-label">-</strong>
+                      <small id="record-id">-</small>
+                    </div>
+                    <div class="summary-block urgency gray" id="urgency-banner">
+                      <span>Tingkat Urgensi</span>
+                      <strong id="urgency-label">-</strong>
+                      <small id="urgency-desc">-</small>
+                    </div>
+                  </div>
+
+                  <div class="notice warning" id="guard-note" style="display:none">
+                    Catatan: koreksi domain diterapkan karena teks memuat istilah keamanan atau keselamatan eksplisit.
+                  </div>
+
+                  <dl class="definition-grid">
+                    <div>
+                      <dt>Kepercayaan Urgensi</dt>
+                      <dd id="urgency-confidence">-</dd>
+                    </div>
+                    <div>
+                      <dt>Status Penyimpanan</dt>
+                      <dd id="saved-tag">Belum tersimpan</dd>
+                    </div>
+                    <div>
+                      <dt>Waktu Analisis</dt>
+                      <dd id="result-stamp">-</dd>
+                    </div>
+                    <div>
+                      <dt>Panjang Teks</dt>
+                      <dd id="result-length">-</dd>
+                    </div>
+                  </dl>
+
+                  <div class="page-grid">
+                    <div class="col-6">
+                      <h3 class="card-title" style="font-size:16px;margin-bottom:10px">Probabilitas Kategori</h3>
+                      <div class="prob-list" id="category-probs"></div>
+                    </div>
+                    <div class="col-6">
+                      <h3 class="card-title" style="font-size:16px;margin-bottom:10px">Probabilitas Urgensi</h3>
+                      <div class="prob-list" id="urgency-probs"></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 class="card-title" style="font-size:16px;margin-bottom:10px">Teks Pengaduan</h3>
+                    <blockquote class="text-preview" id="text-preview"></blockquote>
+                  </div>
+                </div>
+              </article>
+            </div>
+
+            <aside class="col-4 stack">
+              <article class="card" aria-labelledby="history-title">
+                <header class="card-header">
+                  <div>
+                    <span class="eyebrow">Perangkat Ini</span>
+                    <h2 id="history-title" class="card-title">Riwayat Lokal</h2>
+                    <p class="card-lede">Tersimpan di browser. Klik untuk memuat ulang ke editor.</p>
+                  </div>
+                  <button class="btn btn-ghost btn-small" id="clear-history-btn" type="button">Bersihkan</button>
+                </header>
+                <div class="history-list" id="history-list"></div>
+              </article>
+
+              <article class="card">
+                <header class="card-header">
+                  <div>
+                    <span class="eyebrow">Tips Cepat</span>
+                    <h2 class="card-title">Cara menulis pengaduan yang akurat</h2>
+                  </div>
+                </header>
+                <ul class="stack-sm" style="padding-left:18px;color:var(--ink-500);font-size:13px;line-height:1.7">
+                  <li>Sebutkan lokasi spesifik agar instansi cepat menindaklanjuti.</li>
+                  <li>Jelaskan dampak yang dirasakan: bahaya, gangguan, kerugian.</li>
+                  <li>Hindari singkatan ambigu; tulis kata utuh untuk hasil terbaik.</li>
+                </ul>
+              </article>
+            </aside>
+          </section>
         </div>
-        <div class="detail-box">
-          <div class="lbl">Instansi Terkait</div>
-          <div class="val" id="detail-instansi" style="font-size:13px;"></div>
-        </div>
-      </div>
-
-      <!-- Probability bars -->
-      <div class="prob-section">
-        <div class="prob-title">Distribusi Kategori</div>
-        <div id="prob-kat"></div>
-      </div>
-      <div class="prob-section">
-        <div class="prob-title">Distribusi Urgensi</div>
-        <div id="prob-urg"></div>
-      </div>
-
-      <!-- Input preview -->
-      <div class="prob-title" style="margin-bottom:8px;">Teks yang Dianalisis</div>
-      <div class="teks-preview" id="teks-preview"></div>
+      </main>
     </div>
-  </div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script>
+      const input = document.getElementById("input-text");
+      const charCount = document.getElementById("char-count");
+      const errorBox = document.getElementById("error-box");
+      const predictBtn = document.getElementById("predict-btn");
+      const toast = document.getElementById("toast");
+      const resultSection = document.getElementById("result-section");
+      const emptyState = document.getElementById("empty-state");
+      let history = [];
 
-  <!-- HISTORY -->
-  <div id="history-section" style="display:none;">
-    <div class="history-header">
-      <span class="history-title">Riwayat Analisis</span>
-      <button class="history-clear" onclick="clearHistory()">Hapus semua</button>
-    </div>
-    <div class="history-list" id="history-list"></div>
-  </div>
+      try {
+        history = JSON.parse(localStorage.getItem("sipadu_history") || "[]");
+      } catch {
+        history = [];
+      }
 
-</div>
+      function formatLabel(value) {
+        return String(value || "-")
+          .replace(/_/g, " ")
+          .replace(/\b\w/g, (char) => char.toUpperCase());
+      }
 
-<script>
-// ── EXAMPLES ─────────────────────────────────────────────
-const EXAMPLES = [
-  "Jalan di depan pasar retak parah dan berlubang besar, sudah berbahaya bagi pengendara motor terutama saat hujan malam hari",
-  "Sampah sudah menumpuk lebih dari seminggu di tempat pembuangan dekat perumahan kami, baunya sangat mengganggu warga sekitar",
-  "Tadi malam ada begal bersenjata menyerang warga di gang sempit dekat masjid, warga ketakutan dan minta segera ditangani",
-  "Puskesmas tutup saat jam kerja tanpa pemberitahuan, pasien lansia terpaksa pulang tanpa mendapat pelayanan apapun",
-  "KTP saya sudah diajukan 3 bulan lalu tapi belum juga jadi, petugas tidak memberikan informasi yang jelas kapan selesainya",
-];
+      function showToast(message, type = "success") {
+        toast.textContent = message;
+        toast.className = "toast show " + (type === "error" ? "error" : "");
+        clearTimeout(showToast.timer);
+        showToast.timer = setTimeout(() => {
+          toast.className = "toast";
+        }, 2800);
+      }
 
-function fillExample(i) {
-  const ta = document.getElementById('input-text');
-  ta.value = EXAMPLES[i];
-  updateCount();
-  ta.focus();
-}
+      function setStatus(kind, text) {
+        const dot = document.getElementById("status-dot");
+        dot.className = "status-dot " + kind;
+        document.getElementById("status-text").textContent = text;
+      }
 
-// ── CHAR COUNT ────────────────────────────────────────────
-document.getElementById('input-text').addEventListener('input', updateCount);
-function updateCount() {
-  const v = document.getElementById('input-text').value.length;
-  document.getElementById('char-count').textContent = `${v} / 1000`;
-}
+      async function checkStatus() {
+        try {
+          const res = await fetch("/api/status");
+          const data = await res.json();
+          if (data.loaded) {
+            setStatus("ok", "Model siap - " + String(data.device || "").toUpperCase());
+          } else if (data.error) {
+            setStatus("err", "Model gagal dimuat");
+          } else {
+            setStatus("warn", "Model sedang dimuat");
+            setTimeout(checkStatus, 2500);
+          }
+        } catch {
+          setStatus("err", "Server tidak tersambung");
+        }
+      }
 
-// ── STATUS CHECK ──────────────────────────────────────────
-async function checkStatus() {
-  const dot  = document.getElementById('status-dot');
-  const txt  = document.getElementById('status-text');
-  try {
-    const r = await fetch('/api/status');
-    const d = await r.json();
-    if (d.loaded) {
-      dot.className = 'status-dot ok';
-      txt.textContent = `Model siap · ${d.device.toUpperCase()}`;
-    } else if (d.error) {
-      dot.className = 'status-dot err';
-      txt.textContent = `Error: ${d.error}`;
-    } else {
-      dot.className = 'status-dot load';
-      txt.textContent = 'Model sedang dimuat...';
-      setTimeout(checkStatus, 3000);
-    }
-  } catch {
-    dot.className = 'status-dot err';
-    txt.textContent = 'Server tidak dapat dijangkau';
-  }
-}
-checkStatus();
+      function updateCount() {
+        charCount.textContent = input.value.length + " / 1000";
+      }
 
-// ── PREDICT ───────────────────────────────────────────────
-async function predict() {
-  const text = document.getElementById('input-text').value.trim();
-  const errBox = document.getElementById('error-box');
-  errBox.style.display = 'none';
+      function showError(message) {
+        errorBox.textContent = message || "";
+        errorBox.style.display = message ? "block" : "none";
+      }
 
-  if (!text || text.length < 5) {
-    showError('Masukkan teks pengaduan minimal 5 karakter.');
-    return;
-  }
+      function setLoading(active) {
+        predictBtn.disabled = active;
+        predictBtn.innerHTML = active
+          ? "Menganalisis..."
+          : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7" /></svg> Analisis Pengaduan';
+      }
 
-  setLoading(true);
+      async function predict() {
+        const text = input.value.trim();
+        showError("");
+        if (text.length < 5) {
+          showError("Masukkan minimal 5 karakter agar pengaduan dapat dianalisis.");
+          return;
+        }
+        setLoading(true);
+        try {
+          const res = await fetch("/api/predict", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text }),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            showError(data.error || "Server belum dapat memproses pengaduan.");
+            return;
+          }
+          renderResult(data);
+          saveHistory(data);
+          showToast("Pengaduan selesai dianalisis.");
+        } catch {
+          showError("Tidak dapat terhubung ke server Flask.");
+        } finally {
+          setLoading(false);
+        }
+      }
 
-  try {
-    const res  = await fetch('/api/predict', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text }),
-    });
-    const data = await res.json();
+      function renderResult(data) {
+        emptyState.style.display = "none";
+        resultSection.style.display = "";
 
-    if (!res.ok) {
-      showError(data.error || 'Terjadi kesalahan pada server.');
-      return;
-    }
+        document.getElementById("result-time").textContent = data.timestamp || "-";
+        document.getElementById("result-stamp").textContent = data.timestamp || "-";
+        document.getElementById("result-length").textContent = (data.teks || "").length + " karakter";
 
-    renderResult(data);
-    saveHistory(data);
+        const banner = document.getElementById("urgency-banner");
+        banner.className = "summary-block urgency " + (data.urgensi.color || "gray");
+        document.getElementById("urgency-label").textContent =
+          data.urgensi.display || formatLabel(data.urgensi.label);
+        document.getElementById("urgency-desc").textContent = "Kepercayaan " + data.urgensi.confidence + "%";
+        document.getElementById("category-confidence").textContent = data.kategori.confidence + "%";
+        document.getElementById("urgency-confidence").textContent = data.urgensi.confidence + "%";
+        document.getElementById("saved-tag").textContent = data.saved ? "Tersimpan" : "Tidak tersimpan";
 
-  } catch (e) {
-    showError('Tidak dapat terhubung ke server. Pastikan Flask berjalan.');
-  } finally {
-    setLoading(false);
-  }
-}
+        const guard = document.getElementById("guard-note");
+        guard.style.display = data.guard_applied ? "block" : "none";
 
-// ── RENDER RESULT ─────────────────────────────────────────
-function renderResult(d) {
-  const section = document.getElementById('result-section');
-  section.style.display = 'block';
+        document.getElementById("category-label").textContent = formatLabel(data.kategori.label);
+        document.getElementById("agency-label").textContent = data.instansi || "-";
+        document.getElementById("record-id").textContent = data.id ? "ID #" + data.id : "Belum tersimpan";
+        document.getElementById("text-preview").textContent = data.teks || "";
 
-  // Urgensi hero
-  const hero = document.getElementById('urgensi-hero');
-  const COLOR_MAP = { red:'red', yellow:'yellow', green:'green', gray:'gray' };
-  hero.className = 'urgensi-hero ' + (COLOR_MAP[d.urgensi.color] || 'gray');
-  document.getElementById('urgensi-icon').textContent  = d.urgensi.icon;
-  document.getElementById('urgensi-label').textContent = d.urgensi.display;
-  document.getElementById('urgensi-conf').textContent  = `Keyakinan model: ${d.urgensi.confidence}%`;
+        renderProbList("category-probs", data.kategori.probabilities, data.kategori.label);
+        renderProbList("urgency-probs", data.urgensi.probabilities, data.urgensi.label);
+      }
 
-  // Detail
-  document.getElementById('detail-kategori').textContent  = d.kategori.label;
-  document.getElementById('detail-kat-conf').textContent  = `Confidence: ${d.kategori.confidence}%`;
-  document.getElementById('detail-instansi').textContent  = d.instansi;
-  document.getElementById('result-time').textContent      = d.timestamp;
-  document.getElementById('teks-preview').textContent     = '"' + d.teks + '"';
+      function renderProbList(id, probabilities, topLabel) {
+        const box = document.getElementById(id);
+        box.replaceChildren();
+        Object.entries(probabilities || {})
+          .sort((a, b) => b[1] - a[1])
+          .forEach(([label, value]) => {
+            const row = document.createElement("div");
+            row.className = "prob-row";
 
-  // Probability bars
-  renderProbBars('prob-kat', d.kategori.probabilities, d.kategori.label);
-  renderProbBars('prob-urg', d.urgensi.probabilities, d.urgensi.label);
+            const name = document.createElement("span");
+            name.className = "prob-name";
+            name.textContent = formatLabel(label);
 
-  section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
+            const track = document.createElement("span");
+            track.className = "prob-track";
+            const fill = document.createElement("span");
+            fill.className = "prob-fill" + (label === topLabel ? " top" : "");
+            fill.style.width = Math.max(0, Math.min(100, Number(value) || 0)) + "%";
+            track.appendChild(fill);
 
-function renderProbBars(containerId, probs, topLabel) {
-  const container = document.getElementById(containerId);
-  const sorted = Object.entries(probs).sort((a, b) => b[1] - a[1]);
-  container.innerHTML = sorted.map(([k, v]) => `
-    <div class="prob-row">
-      <span class="prob-name">${k.replace('_',' ')}</span>
-      <div class="prob-bar-bg">
-        <div class="prob-bar-fill ${k === topLabel ? 'top' : ''}" data-w="${v}" style="width:0%"></div>
-      </div>
-      <span class="prob-val">${v}%</span>
-    </div>
-  `).join('');
+            const val = document.createElement("span");
+            val.className = "prob-val";
+            val.textContent = value + "%";
 
-  // Animate bars
-  requestAnimationFrame(() => {
-    container.querySelectorAll('.prob-bar-fill').forEach(bar => {
-      const w = bar.dataset.w;
-      requestAnimationFrame(() => { bar.style.width = w + '%'; });
-    });
-  });
-}
+            row.append(name, track, val);
+            box.appendChild(row);
+          });
+      }
 
-// ── HISTORY ───────────────────────────────────────────────
-let history = JSON.parse(localStorage.getItem('sipadu_history') || '[]');
+      function saveHistory(data) {
+        history.unshift({
+          teks: data.teks,
+          kategori: data.kategori.label,
+          urgensi: data.urgensi.display || formatLabel(data.urgensi.label),
+          urgensi_key: data.urgensi.label,
+          instansi: data.instansi,
+          ts: data.timestamp,
+        });
+        history = history.slice(0, 10);
+        localStorage.setItem("sipadu_history", JSON.stringify(history));
+        renderHistory();
+      }
 
-function saveHistory(d) {
-  history.unshift({
-    teks:     d.teks,
-    kategori: d.kategori.label,
-    urgensi:  d.urgensi,
-    instansi: d.instansi,
-    ts:       d.timestamp,
-  });
-  if (history.length > 20) history.pop();
-  localStorage.setItem('sipadu_history', JSON.stringify(history));
-  renderHistory();
-}
+      function renderHistory() {
+        const list = document.getElementById("history-list");
+        list.replaceChildren();
+        if (!history.length) {
+          const empty = document.createElement("div");
+          empty.className = "empty-state compact";
+          empty.innerHTML = "<strong>Riwayat masih kosong</strong><span>Pengaduan yang dianalisis akan tersimpan di perangkat ini.</span>";
+          list.appendChild(empty);
+          return;
+        }
+        history.forEach((item) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "history-item";
+          btn.addEventListener("click", () => {
+            input.value = item.teks;
+            updateCount();
+            input.focus();
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            showToast("Teks riwayat dimuat ke ruang analisis.");
+          });
 
-function renderHistory() {
-  const section = document.getElementById('history-section');
-  const list    = document.getElementById('history-list');
-  if (history.length === 0) { section.style.display = 'none'; return; }
-  section.style.display = 'block';
+          const text = document.createElement("span");
+          text.className = "history-text";
+          text.textContent = item.teks;
 
-  list.innerHTML = history.map((h, i) => `
-    <div class="history-item" onclick="loadHistory(${i})">
-      <span class="history-urg">${h.urgensi.icon}</span>
-      <div class="history-meta">
-        <div class="history-teks">${h.teks}</div>
-        <div class="history-sub">${h.urgensi.display} · ${h.ts}</div>
-      </div>
-      <span class="history-kat">${h.kategori}</span>
-    </div>
-  `).join('');
-}
+          const meta = document.createElement("span");
+          meta.className = "history-meta";
+          meta.textContent = (item.urgensi || "-") + " | " + (item.ts || "-");
 
-function loadHistory(i) {
-  const h = history[i];
-  document.getElementById('input-text').value = h.teks;
-  updateCount();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
+          const tag = document.createElement("span");
+          tag.className = "tag category";
+          tag.textContent = formatLabel(item.kategori);
 
-function clearHistory() {
-  history = [];
-  localStorage.removeItem('sipadu_history');
-  renderHistory();
-}
+          btn.append(text, meta, tag);
+          list.appendChild(btn);
+        });
+      }
 
-// ── UTILS ─────────────────────────────────────────────────
-function setLoading(on) {
-  document.getElementById('btn-predict').disabled = on;
-  document.getElementById('btn-text').textContent = on ? 'Menganalisis...' : 'Analisis Pengaduan';
-  document.getElementById('spinner').style.display = on ? 'block' : 'none';
-  document.getElementById('btn-icon') && (document.querySelector('.btn-icon').style.display = on ? 'none' : 'inline');
-}
+      input.addEventListener("input", updateCount);
+      input.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && event.ctrlKey) predict();
+      });
+      predictBtn.addEventListener("click", predict);
+      document.getElementById("clear-btn").addEventListener("click", () => {
+        input.value = "";
+        updateCount();
+        input.focus();
+        showError("");
+      });
+      document.getElementById("clear-history-btn").addEventListener("click", () => {
+        history = [];
+        localStorage.removeItem("sipadu_history");
+        renderHistory();
+        showToast("Riwayat lokal dibersihkan.");
+      });
 
-function showError(msg) {
-  const b = document.getElementById('error-box');
-  b.textContent = '⚠️ ' + msg;
-  b.style.display = 'block';
-}
-
-// Enter to submit
-document.getElementById('input-text').addEventListener('keydown', e => {
-  if (e.key === 'Enter' && e.ctrlKey) predict();
-});
-
-// Init history
-renderHistory();
-</script>
-</body>
+      renderHistory();
+      updateCount();
+      checkStatus();
+    </script>
+  </body>
 </html>

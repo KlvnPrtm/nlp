@@ -22,6 +22,39 @@ CREATE TABLE IF NOT EXISTS pengaduan (
     created_at      DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Kategori dinamis untuk panel admin dan mapping instansi
+CREATE TABLE IF NOT EXISTS kategori (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    slug        VARCHAR(80) NOT NULL UNIQUE,
+    nama        VARCHAR(120) NOT NULL,
+    instansi    VARCHAR(160) NOT NULL,
+    aktif       TINYINT(1) DEFAULT 1,
+    created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at  DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+INSERT INTO kategori (slug, nama, instansi, aktif) VALUES
+('administrasi', 'Administrasi', 'Dinas Kependudukan dan Catatan Sipil', 1),
+('infrastruktur', 'Infrastruktur', 'Dinas Pekerjaan Umum', 1),
+('keamanan', 'Keamanan', 'Satuan Polisi Pamong Praja', 1),
+('kebersihan', 'Kebersihan', 'Dinas Lingkungan Hidup', 1),
+('kesehatan', 'Kesehatan', 'Dinas Kesehatan', 1)
+ON DUPLICATE KEY UPDATE slug = slug;
+
+-- Riwayat validasi dataset dan status training
+CREATE TABLE IF NOT EXISTS training_history (
+    id            INT AUTO_INCREMENT PRIMARY KEY,
+    filename      VARCHAR(255),
+    total_rows    INT DEFAULT 0,
+    valid_rows    INT DEFAULT 0,
+    invalid_rows  INT DEFAULT 0,
+    status        VARCHAR(40) DEFAULT 'divalidasi',
+    message       TEXT,
+    created_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
+    started_at    DATETIME NULL,
+    finished_at   DATETIME NULL
+);
+
 -- View: ringkasan per kategori
 CREATE OR REPLACE VIEW stat_kategori AS
 SELECT

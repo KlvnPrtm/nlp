@@ -1,7 +1,10 @@
 model_indobert_kategori/
 model_indobert_urgensi/
 Hasil/
+impeccable/
+ui-ux-pro-max/
 
 __pycache__/
 *.pyc
 .env
+*.csv
